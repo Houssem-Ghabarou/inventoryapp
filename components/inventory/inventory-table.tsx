@@ -1,0 +1,352 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash,
+  ArrowUpDown,
+  AlertCircle,
+  DollarSign,
+} from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
+
+type InventoryItem = {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  minStock: number;
+  unitPrice: number;
+  totalValue: number;
+  location: string;
+  lastUpdated: string;
+};
+
+export default function InventoryTable() {
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sortColumn, setSortColumn] = useState<keyof InventoryItem>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    // Simulate fetching data
+    setTimeout(() => {
+      setItems([
+        {
+          id: "item-001",
+          name: "Brake Pads (Front)",
+          sku: "BP-F-001",
+          category: "Brakes",
+          quantity: 45,
+          minStock: 20,
+          unitPrice: 25,
+          totalValue: 1125,
+          location: "Rack A-12",
+          lastUpdated: "2023-06-14",
+        },
+        {
+          id: "item-002",
+          name: "Oil Filter",
+          sku: "OF-102",
+          category: "Engine",
+          quantity: 78,
+          minStock: 30,
+          unitPrice: 15,
+          totalValue: 1170,
+          location: "Rack B-05",
+          lastUpdated: "2023-06-15",
+        },
+        {
+          id: "item-003",
+          name: "Spark Plugs",
+          sku: "SP-203",
+          category: "Electrical",
+          quantity: 120,
+          minStock: 50,
+          unitPrice: 8,
+          totalValue: 960,
+          location: "Rack C-08",
+          lastUpdated: "2023-06-13",
+        },
+        {
+          id: "item-004",
+          name: "Windshield Wipers",
+          sku: "WW-304",
+          category: "Exterior",
+          quantity: 15,
+          minStock: 25,
+          unitPrice: 22,
+          totalValue: 330,
+          location: "Rack D-03",
+          lastUpdated: "2023-06-12",
+        },
+        {
+          id: "item-005",
+          name: "Headlight Bulbs",
+          sku: "HB-405",
+          category: "Electrical",
+          quantity: 32,
+          minStock: 20,
+          unitPrice: 18,
+          totalValue: 576,
+          location: "Rack C-10",
+          lastUpdated: "2023-06-15",
+        },
+        {
+          id: "item-006",
+          name: "Air Filter",
+          sku: "AF-506",
+          category: "Engine",
+          quantity: 42,
+          minStock: 15,
+          unitPrice: 12,
+          totalValue: 504,
+          location: "Rack B-07",
+          lastUpdated: "2023-06-14",
+        },
+        {
+          id: "item-007",
+          name: "Shock Absorbers",
+          sku: "SA-607",
+          category: "Suspension",
+          quantity: 18,
+          minStock: 10,
+          unitPrice: 65,
+          totalValue: 1170,
+          location: "Rack E-02",
+          lastUpdated: "2023-06-13",
+        },
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const handleSort = (column: keyof InventoryItem) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedItems = [...items].sort((a, b) => {
+    const valueA = a[sortColumn];
+    const valueB = b[sortColumn];
+
+    if (typeof valueA === "string" && typeof valueB === "string") {
+      return sortDirection === "asc"
+        ? valueA.localeCompare(valueB)
+        : valueB.localeCompare(valueA);
+    }
+
+    if (typeof valueA === "number" && typeof valueB === "number") {
+      return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+    }
+
+    return 0;
+  });
+
+  const getStockStatus = (item: InventoryItem) => {
+    const percentage = (item.quantity / item.minStock) * 100;
+
+    if (item.quantity <= item.minStock * 0.5) {
+      return {
+        status: "critical",
+        badge: <Badge variant="destructive">Critical</Badge>,
+        progressColor: "bg-red-500",
+        percentage: percentage > 100 ? 100 : percentage,
+      };
+    } else if (item.quantity <= item.minStock) {
+      return {
+        status: "low",
+        badge: (
+          <Badge
+            variant="outline"
+            className="bg-amber-50 text-amber-700 border-amber-200"
+          >
+            Low
+          </Badge>
+        ),
+        progressColor: "bg-amber-500",
+        percentage: percentage > 100 ? 100 : percentage,
+      };
+    } else {
+      return {
+        status: "good",
+        badge: (
+          <Badge
+            variant="outline"
+            className="bg-emerald-50 text-emerald-700 border-emerald-200"
+          >
+            Good
+          </Badge>
+        ),
+        progressColor: "bg-emerald-500",
+        percentage: 100,
+      };
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[250px]">
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("name")}
+                className="-ml-4"
+              >
+                Item Name
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("category")}
+                className="-ml-4"
+              >
+                Category
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("quantity")}
+                className="-ml-4"
+              >
+                Quantity
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("unitPrice")}
+                className="-ml-4"
+              >
+                Unit Price
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("totalValue")}
+                className="-ml-4"
+              >
+                Total Value
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>Stock Status</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedItems.map((item) => {
+            const stockStatus = getStockStatus(item);
+            return (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell>{item.sku}</TableCell>
+                <TableCell>{item.category}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {item.quantity}
+                    {item.quantity <= item.minStock && (
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    {item.unitPrice.toFixed(2)}
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {formatCurrency(item.totalValue)}
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    {stockStatus.badge}
+                    <Progress
+                      value={stockStatus.percentage}
+                      className={`h-2 ${stockStatus.progressColor}`}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>{item.location}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem>View details</DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit item
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600">
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete item
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
