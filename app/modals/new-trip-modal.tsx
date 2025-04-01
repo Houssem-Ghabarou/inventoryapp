@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { X, TruckIcon, Plus, Minus } from "lucide-react";
+import { X, TruckIcon, Plus, Minus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,62 +15,89 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "@/firebase/config";
+import { useAuth } from "@/contexts/auth-context";
+
+type InventoryItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+type Vehicle = {
+  id: string;
+  name: string;
+  status: string;
+};
 
 export default function NewTripModal({
   isOpen,
   setIsOpen,
 }: {
   isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsOpen: (isOpen: boolean) => void;
 }) {
-  const [items, setItems] = useState<
-    Array<{ id: string; name: string; quantity: number; unitPrice: number }>
-  >([]);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<
     Array<{ id: string; quantity: number }>
   >([]);
-  const [driver, setDriver] = useState("");
   const [vehicle, setVehicle] = useState("");
-
-  // Mock data for the form
-  const [drivers, setDrivers] = useState([
-    { id: "d1", name: "Jane Smith" },
-    { id: "d2", name: "John Doe" },
-    { id: "d3", name: "Mike Johnson" },
-  ]);
-
-  const [vehicles, setVehicles] = useState([
-    { id: "v1", name: "Truck #103" },
-    { id: "v2", name: "Van #087" },
-    { id: "v3", name: "Truck #105" },
-  ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Fetch inventory items
-    // This would be an API call in a real application
-    setItems([
-      { id: "i1", name: "Brake Pads", quantity: 100, unitPrice: 25 },
-      { id: "i2", name: "Oil Filters", quantity: 80, unitPrice: 15 },
-      { id: "i3", name: "Spark Plugs", quantity: 150, unitPrice: 8 },
-      { id: "i4", name: "Headlight Bulbs", quantity: 60, unitPrice: 18 },
-      { id: "i5", name: "Windshield Wipers", quantity: 45, unitPrice: 22 },
-    ]);
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen]);
 
-    // Set up event listeners for the modal
-    const modalTriggers = document.querySelectorAll(
-      '[data-modal-trigger="new-trip"]'
-    );
-    modalTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => setIsOpen(true));
-    });
+  const fetchData = async () => {
+    console.log("fetching data...");
+    setIsLoading(true);
+    try {
+      // Fetch inventory items
+      const itemsCollection = collection(db, "inventory");
+      const itemsSnapshot = await getDocs(itemsCollection);
+      const itemsList = itemsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name,
+        quantity: doc.data().quantity,
+        unitPrice: doc.data().unitPrice,
+      }));
+      setItems(itemsList);
 
-    // Clean up
-    return () => {
-      modalTriggers.forEach((trigger) => {
-        trigger.removeEventListener("click", () => setIsOpen(true));
-      });
-    };
-  }, []);
+      // Fetch vehicles (only active ones)
+      const vehiclesCollection = collection(db, "vehicles");
+      const vehiclesSnapshot = await getDocs(vehiclesCollection);
+      const vehiclesList = vehiclesSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          status: doc.data().status,
+        }))
+        .filter((vehicle) => vehicle.status === "active");
+      setVehicles(vehiclesList);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddItem = (itemId: string) => {
     if (!selectedItems.some((item) => item.id === itemId)) {
@@ -91,33 +118,100 @@ export default function NewTripModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsSubmitting(true);
 
-    // Prepare the data for submission
-    const tripData = {
-      driver,
-      vehicle,
-      items: selectedItems.map((selectedItem) => {
+    try {
+      // Prepare the trip data
+      const tripItems = selectedItems.map((selectedItem) => {
         const item = items.find((i) => i.id === selectedItem.id);
         return {
-          id: selectedItem.id,
-          name: item?.name,
+          itemId: selectedItem.id,
+          name: item?.name || "",
           quantity: selectedItem.quantity,
-          unitPrice: item?.unitPrice,
+          unitPrice: item?.unitPrice || 0,
           totalValue: selectedItem.quantity * (item?.unitPrice || 0),
         };
-      }),
-    };
+      });
 
-    // This would be an API call in a real application
-    console.log("Submitting trip data:", tripData);
+      const totalItems = tripItems.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+      );
+      const totalValue = tripItems.reduce(
+        (sum, item) => sum + item.totalValue,
+        0
+      );
 
-    // Close the modal and reset form
-    setIsOpen(false);
-    setSelectedItems([]);
-    setDriver("");
-    setVehicle("");
+      // Generate a reference code
+      const refCode = `TRK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      const tripData = {
+        reference: refCode,
+        vehicleId: vehicle,
+        vehicleName: vehicles.find((v) => v.id === vehicle)?.name || "",
+        departureDate: serverTimestamp(),
+        status: "out", // out, returned, reconciled
+        items: tripItems,
+        totalItems,
+        totalValue,
+        createdBy: user?.id || "unknown",
+        createdAt: serverTimestamp(),
+      };
+
+      // Add to Firestore
+      const tripsCollection = collection(db, "trips");
+      const tripRef = await addDoc(tripsCollection, tripData);
+
+      // Also add a transaction record for this departure
+      const transactionData = {
+        type: "departure",
+        reference: refCode,
+        tripId: tripRef.id,
+        date: serverTimestamp(),
+        items: totalItems,
+        value: totalValue,
+        vehicleId: vehicle,
+        vehicleName: vehicles.find((v) => v.id === vehicle)?.name || "",
+        status: "open",
+        createdBy: user?.id || "unknown",
+        createdAt: serverTimestamp(),
+      };
+
+      const transactionsCollection = collection(db, "transactions");
+      await addDoc(transactionsCollection, transactionData);
+
+      // Update inventory quantities
+      for (const selectedItem of selectedItems) {
+        const item = items.find((i) => i.id === selectedItem.id);
+        if (item) {
+          const newQuantity = item.quantity - selectedItem.quantity;
+          const itemRef = doc(db, "inventory", selectedItem.id);
+          await updateDoc(itemRef, {
+            quantity: newQuantity,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      setSuccess("Trip created successfully!");
+
+      // Reset form after successful submission
+      setTimeout(() => {
+        setIsOpen(false);
+        setSelectedItems([]);
+        setVehicle("");
+        setSuccess("");
+      }, 2000);
+    } catch (err) {
+      console.error("Error creating trip:", err);
+      setError("Failed to create trip. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const calculateTotalItems = () => {
@@ -152,156 +246,168 @@ export default function NewTripModal({
 
         <form onSubmit={handleSubmit}>
           <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="driver">Driver</Label>
-                <Select value={driver} onValueChange={setDriver} required>
-                  <SelectTrigger id="driver">
-                    <SelectValue placeholder="Select driver" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {drivers.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert
+                variant="default"
+                className="bg-green-50 text-green-700 border-green-200"
+              >
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+
+            {isLoading ? (
+              <div className="py-8 text-center">
+                <p>Loading data...</p>
               </div>
-
-              <div>
-                <Label htmlFor="vehicle">Vehicle</Label>
-                <Select value={vehicle} onValueChange={setVehicle} required>
-                  <SelectTrigger id="vehicle">
-                    <SelectValue placeholder="Select vehicle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehicles.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <Label>Add Items</Label>
-              <Select onValueChange={handleAddItem}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select items to add" />
-                </SelectTrigger>
-                <SelectContent>
-                  {items
-                    .filter(
-                      (item) => !selectedItems.some((si) => si.id === item.id)
-                    )
-                    .map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} ({item.quantity} available)
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedItems.length > 0 && (
-              <div className="border rounded-md">
-                <div className="grid grid-cols-12 gap-2 p-3 bg-gray-50 font-medium text-sm">
-                  <div className="col-span-5">Item</div>
-                  <div className="col-span-2">Available</div>
-                  <div className="col-span-3">Quantity</div>
-                  <div className="col-span-2 text-right">Value</div>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="vehicle">Vehicle</Label>
+                  <Select value={vehicle} onValueChange={setVehicle} required>
+                    <SelectTrigger id="vehicle">
+                      <SelectValue placeholder="Select vehicle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vehicles.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {selectedItems.map((selectedItem) => {
-                  const item = items.find((i) => i.id === selectedItem.id);
-                  if (!item) return null;
+                <Separator />
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-12 gap-2 p-3 border-t items-center"
-                    >
-                      <div className="col-span-5 font-medium">{item.name}</div>
-                      <div className="col-span-2 text-sm text-muted-foreground">
-                        {item.quantity}
+                <div>
+                  <Label>Add Items</Label>
+                  <Select onValueChange={handleAddItem}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select items to add" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {items
+                        .filter(
+                          (item) =>
+                            !selectedItems.some((si) => si.id === item.id) &&
+                            item.quantity > 0
+                        )
+                        .map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name} ({item.quantity} available)
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedItems.length > 0 && (
+                  <div className="border rounded-md">
+                    <div className="grid grid-cols-12 gap-2 p-3 bg-gray-50 font-medium text-sm">
+                      <div className="col-span-5">Item</div>
+                      <div className="col-span-2">Available</div>
+                      <div className="col-span-3">Quantity</div>
+                      <div className="col-span-2 text-right">Value</div>
+                    </div>
+
+                    {selectedItems.map((selectedItem) => {
+                      const item = items.find((i) => i.id === selectedItem.id);
+                      if (!item) return null;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="grid grid-cols-12 gap-2 p-3 border-t items-center"
+                        >
+                          <div className="col-span-5 font-medium">
+                            {item.name}
+                          </div>
+                          <div className="col-span-2 text-sm text-muted-foreground">
+                            {item.quantity}
+                          </div>
+                          <div className="col-span-3 flex items-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.id,
+                                  selectedItem.quantity - 1
+                                )
+                              }
+                              disabled={selectedItem.quantity <= 1}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min="1"
+                              max={item.quantity}
+                              value={selectedItem.quantity}
+                              onChange={(e) =>
+                                handleQuantityChange(
+                                  item.id,
+                                  Number.parseInt(e.target.value) || 1
+                                )
+                              }
+                              className="h-7 mx-1 text-center"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.id,
+                                  selectedItem.quantity + 1
+                                )
+                              }
+                              disabled={selectedItem.quantity >= item.quantity}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="col-span-2 text-right">
+                            {formatCurrency(
+                              selectedItem.quantity * item.unitPrice
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 ml-1 text-red-500 hover:text-red-600"
+                              onClick={() => handleRemoveItem(item.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <div className="grid grid-cols-12 gap-2 p-3 border-t bg-gray-50">
+                      <div className="col-span-5 font-medium">Total</div>
+                      <div className="col-span-2"></div>
+                      <div className="col-span-3 font-medium">
+                        {calculateTotalItems()} items
                       </div>
-                      <div className="col-span-3 flex items-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() =>
-                            handleQuantityChange(
-                              item.id,
-                              selectedItem.quantity - 1
-                            )
-                          }
-                          disabled={selectedItem.quantity <= 1}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <Input
-                          type="number"
-                          min="1"
-                          max={item.quantity}
-                          value={selectedItem.quantity}
-                          onChange={(e) =>
-                            handleQuantityChange(
-                              item.id,
-                              Number.parseInt(e.target.value) || 1
-                            )
-                          }
-                          className="h-7 mx-1 text-center"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() =>
-                            handleQuantityChange(
-                              item.id,
-                              selectedItem.quantity + 1
-                            )
-                          }
-                          disabled={selectedItem.quantity >= item.quantity}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="col-span-2 text-right">
-                        {formatCurrency(selectedItem.quantity * item.unitPrice)}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 ml-1 text-red-500 hover:text-red-600"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                      <div className="col-span-2 text-right font-medium">
+                        {formatCurrency(calculateTotalValue())}
                       </div>
                     </div>
-                  );
-                })}
-
-                <div className="grid grid-cols-12 gap-2 p-3 border-t bg-gray-50">
-                  <div className="col-span-5 font-medium">Total</div>
-                  <div className="col-span-2"></div>
-                  <div className="col-span-3 font-medium">
-                    {calculateTotalItems()} items
                   </div>
-                  <div className="col-span-2 text-right font-medium">
-                    {formatCurrency(calculateTotalValue())}
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
 
@@ -315,10 +421,24 @@ export default function NewTripModal({
             </Button>
             <Button
               type="submit"
-              disabled={!driver || !vehicle || selectedItems.length === 0}
+              disabled={
+                isSubmitting ||
+                isLoading ||
+                !vehicle ||
+                selectedItems.length === 0
+              }
             >
-              <TruckIcon className="h-4 w-4 mr-2" />
-              Create Trip
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <TruckIcon className="h-4 w-4 mr-2" />
+                  Create Trip
+                </>
+              )}
             </Button>
           </div>
         </form>

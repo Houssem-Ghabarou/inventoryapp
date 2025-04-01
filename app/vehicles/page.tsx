@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+"use client";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { Truck, Package, Plus, Search, Filter, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import VehiclesList from "@/components/vehicles/vehicles-list";
 import VehiclesMap from "@/components/vehicles/vehicles-map";
+import AddVehicleModal from "../modals/add-vehicle-item";
 
 export default function VehiclesPage() {
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Main content */}
       <div className="flex-1 ">
+        {isOpen && <AddVehicleModal isOpen={isOpen} setIsOpen={setIsOpen} />}
+
         <header className="bg-white border-b px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 className="text-xl font-semibold">Vehicle Management</h2>
@@ -28,7 +33,7 @@ export default function VehiclesPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Vehicle
               </Button>

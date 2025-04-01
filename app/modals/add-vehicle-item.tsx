@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { X, TruckIcon, Save, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,60 +15,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
+import { useAuth } from "@/contexts/auth-context";
 
-export default function AddInventoryItemModal() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function AddVehicleModal({
+  isOpen,
+  setIsOpen,
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const [formData, setFormData] = useState({
     name: "",
-    sku: "",
-    category: "",
-    quantity: "",
-    minStock: "",
-    unitPrice: "",
-    location: "",
-    description: "",
+    type: "",
+    licensePlate: "",
+    status: "active",
+    notes: "",
   });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  // Categories for the dropdown
-  const categories = [
-    "Brakes",
-    "Engine",
-    "Electrical",
-    "Exterior",
-    "Suspension",
-    "Transmission",
-    "Cooling",
-    "Accessories",
+  // Vehicle types for the dropdown
+  const vehicleTypes = [
+    "Delivery Truck",
+    "Cargo Van",
+    "Pickup Truck",
+    "Box Truck",
+    "Semi-Truck",
   ];
-
-  // Locations for the dropdown
-  const locations = [
-    "Rack A-01",
-    "Rack A-02",
-    "Rack B-01",
-    "Rack B-02",
-    "Rack C-01",
-    "Rack C-02",
-    "Warehouse 1",
-    "Warehouse 2",
-  ];
-
-  useEffect(() => {
-    // Set up event listeners for the modal
-    const modalTriggers = document.querySelectorAll(
-      '[data-modal-trigger="add-inventory-item"]'
-    );
-    modalTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", () => setIsOpen(true));
-    });
-
-    // Clean up
-    return () => {
-      modalTriggers.forEach((trigger) => {
-        trigger.removeEventListener("click", () => setIsOpen(true));
-      });
-    };
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -81,48 +59,59 @@ export default function AddInventoryItemModal() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    setIsSubmitting(true);
 
-    // Calculate total value
-    const quantity = Number.parseInt(formData.quantity) || 0;
-    const unitPrice = Number.parseFloat(formData.unitPrice) || 0;
-    const totalValue = quantity * unitPrice;
+    try {
+      // Prepare the data for submission
+      const vehicleData = {
+        name: formData.name,
+        type: formData.type,
+        licensePlate: formData.licensePlate,
+        status: formData.status,
+        notes: formData.notes,
+        createdBy: user?.id || "unknown",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
 
-    // Prepare the data for submission
-    const itemData = {
-      ...formData,
-      quantity: quantity,
-      minStock: Number.parseInt(formData.minStock) || 0,
-      unitPrice: unitPrice,
-      totalValue: totalValue,
-    };
+      // Add to Firestore
+      const vehiclesCollection = collection(db, "vehicles");
+      await addDoc(vehiclesCollection, vehicleData);
 
-    // This would be an API call in a real application
-    console.log("Submitting new inventory item:", itemData);
+      setSuccess("Vehicle added successfully!");
 
-    // Close the modal and reset form
-    setIsOpen(false);
-    setFormData({
-      name: "",
-      sku: "",
-      category: "",
-      quantity: "",
-      minStock: "",
-      unitPrice: "",
-      location: "",
-      description: "",
-    });
+      // Reset form after successful submission
+      setTimeout(() => {
+        setIsOpen(false);
+        setFormData({
+          name: "",
+          type: "",
+          licensePlate: "",
+          status: "active",
+          notes: "",
+        });
+        setSuccess("");
+      }, 2000);
+    } catch (err) {
+      console.error("Error adding vehicle:", err);
+      setError("Failed to add vehicle. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const generateSKU = () => {
-    // Generate a simple SKU based on the item name and a random number
-    if (formData.name) {
-      const prefix = formData.name.substring(0, 2).toUpperCase();
-      const randomNum = Math.floor(Math.random() * 10000)
+  const generateVehicleName = () => {
+    // Generate a vehicle name based on the type and a random number
+    if (formData.type) {
+      const prefix = formData.type.includes("Truck") ? "Truck" : "Van";
+      const randomNum = Math.floor(Math.random() * 1000)
         .toString()
-        .padStart(4, "0");
-      setFormData((prev) => ({ ...prev, sku: `${prefix}-${randomNum}` }));
+        .padStart(3, "0");
+      setFormData((prev) => ({ ...prev, name: `${prefix} #${randomNum}` }));
     }
   };
 
@@ -132,7 +121,7 @@ export default function AddInventoryItemModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-bold">Add New Inventory Item</h2>
+          <h2 className="text-xl font-bold">Add New Vehicle</h2>
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
@@ -140,156 +129,117 @@ export default function AddInventoryItemModal() {
 
         <form onSubmit={handleSubmit}>
           <div className="p-4 space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert
+                variant="default"
+                className="bg-green-50 text-green-700 border-green-200"
+              >
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Item Name*</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU*</Label>
+                <Label htmlFor="name">Vehicle Name*</Label>
                 <div className="flex gap-2">
                   <Input
-                    id="sku"
-                    name="sku"
-                    value={formData.sku}
+                    id="name"
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
                     required
                   />
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={generateSKU}
+                    onClick={generateVehicleName}
+                    disabled={!formData.type}
                     className="whitespace-nowrap"
                   >
                     Generate
                   </Button>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Vehicle Type*</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => handleSelectChange("type", value)}
+                  required
+                >
+                  <SelectTrigger id="type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Category*</Label>
+                <Label htmlFor="licensePlate">License Plate*</Label>
+                <Input
+                  id="licensePlate"
+                  name="licensePlate"
+                  value={formData.licensePlate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status*</Label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) =>
-                    handleSelectChange("category", value)
-                  }
+                  value={formData.status}
+                  onValueChange={(value) => handleSelectChange("status", value)}
                   required
                 >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="location">Storage Location*</Label>
-                <Select
-                  value={formData.location}
-                  onValueChange={(value) =>
-                    handleSelectChange("location", value)
-                  }
-                  required
-                >
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((location) => (
-                      <SelectItem key={location} value={location}>
-                        {location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity*</Label>
-                <Input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  min="0"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="minStock">Minimum Stock</Label>
-                <Input
-                  id="minStock"
-                  name="minStock"
-                  type="number"
-                  min="0"
-                  value={formData.minStock}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unitPrice">Unit Price ($)*</Label>
-                <Input
-                  id="unitPrice"
-                  name="unitPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.unitPrice}
-                  onChange={handleChange}
-                  required
-                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="notes">Notes</Label>
               <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
+                id="notes"
+                name="notes"
+                value={formData.notes}
                 onChange={handleChange}
                 rows={3}
+                placeholder="Additional information about the vehicle..."
               />
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-md">
-              <h3 className="font-medium mb-2">Summary</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Total Value:</div>
-                <div className="text-right font-medium">
-                  $
-                  {(
-                    (Number.parseFloat(formData.unitPrice) || 0) *
-                    (Number.parseInt(formData.quantity) || 0)
-                  ).toFixed(2)}
-                </div>
-
-                <div>Stock Status:</div>
-                <div className="text-right font-medium">
-                  {Number.parseInt(formData.quantity) > 0
-                    ? "In Stock"
-                    : "Out of Stock"}
-                </div>
+            <div className="p-3 bg-blue-50 rounded-md flex items-center gap-3">
+              <TruckIcon className="h-5 w-5 text-blue-500" />
+              <div>
+                <h3 className="font-medium">Vehicle Information</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add this vehicle to your fleet to track inventory movements
+                  and sales.
+                </p>
               </div>
             </div>
           </div>
@@ -305,16 +255,23 @@ export default function AddInventoryItemModal() {
             <Button
               type="submit"
               disabled={
+                isSubmitting ||
                 !formData.name ||
-                !formData.sku ||
-                !formData.category ||
-                !formData.quantity ||
-                !formData.unitPrice ||
-                !formData.location
+                !formData.type ||
+                !formData.licensePlate
               }
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Item
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Vehicle
+                </>
+              )}
             </Button>
           </div>
         </form>

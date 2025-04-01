@@ -28,6 +28,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import {
+  collection,
+  getDocs,
+  doc,
+  deleteDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 type InventoryItem = {
   id: string;
@@ -39,7 +48,7 @@ type InventoryItem = {
   unitPrice: number;
   totalValue: number;
   location: string;
-  lastUpdated: string;
+  lastUpdated: string | any;
 };
 
 export default function InventoryTable() {
@@ -49,97 +58,54 @@ export default function InventoryTable() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setItems([
-        {
-          id: "item-001",
-          name: "Brake Pads (Front)",
-          sku: "BP-F-001",
-          category: "Brakes",
-          quantity: 45,
-          minStock: 20,
-          unitPrice: 25,
-          totalValue: 1125,
-          location: "Rack A-12",
-          lastUpdated: "2023-06-14",
-        },
-        {
-          id: "item-002",
-          name: "Oil Filter",
-          sku: "OF-102",
-          category: "Engine",
-          quantity: 78,
-          minStock: 30,
-          unitPrice: 15,
-          totalValue: 1170,
-          location: "Rack B-05",
-          lastUpdated: "2023-06-15",
-        },
-        {
-          id: "item-003",
-          name: "Spark Plugs",
-          sku: "SP-203",
-          category: "Electrical",
-          quantity: 120,
-          minStock: 50,
-          unitPrice: 8,
-          totalValue: 960,
-          location: "Rack C-08",
-          lastUpdated: "2023-06-13",
-        },
-        {
-          id: "item-004",
-          name: "Windshield Wipers",
-          sku: "WW-304",
-          category: "Exterior",
-          quantity: 15,
-          minStock: 25,
-          unitPrice: 22,
-          totalValue: 330,
-          location: "Rack D-03",
-          lastUpdated: "2023-06-12",
-        },
-        {
-          id: "item-005",
-          name: "Headlight Bulbs",
-          sku: "HB-405",
-          category: "Electrical",
-          quantity: 32,
-          minStock: 20,
-          unitPrice: 18,
-          totalValue: 576,
-          location: "Rack C-10",
-          lastUpdated: "2023-06-15",
-        },
-        {
-          id: "item-006",
-          name: "Air Filter",
-          sku: "AF-506",
-          category: "Engine",
-          quantity: 42,
-          minStock: 15,
-          unitPrice: 12,
-          totalValue: 504,
-          location: "Rack B-07",
-          lastUpdated: "2023-06-14",
-        },
-        {
-          id: "item-007",
-          name: "Shock Absorbers",
-          sku: "SA-607",
-          category: "Suspension",
-          quantity: 18,
-          minStock: 10,
-          unitPrice: 65,
-          totalValue: 1170,
-          location: "Rack E-02",
-          lastUpdated: "2023-06-13",
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchInventoryItems();
   }, []);
+
+  const fetchInventoryItems = async () => {
+    setLoading(true);
+    try {
+      const inventoryCollection = collection(db, "inventory");
+      const q = query(inventoryCollection, orderBy("name"));
+      const snapshot = await getDocs(q);
+
+      const inventoryItems = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          sku: data.sku,
+          category: data.category,
+          quantity: data.quantity,
+          minStock: data.minStock || 0,
+          unitPrice: data.unitPrice,
+          totalValue: data.totalValue,
+          location: data.location,
+          lastUpdated: data.updatedAt
+            ? new Date(data.updatedAt.seconds * 1000).toLocaleDateString()
+            : "N/A",
+        };
+      });
+
+      setItems(inventoryItems);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this item?")) {
+      try {
+        await deleteDoc(doc(db, "inventory", id));
+        // Remove the item from the state
+        setItems(items.filter((item) => item.id !== id));
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        alert("Failed to delete item. Please try again.");
+      }
+    }
+  };
 
   const handleSort = (column: keyof InventoryItem) => {
     if (sortColumn === column) {
@@ -335,7 +301,10 @@ export default function InventoryTable() {
                         Edit item
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
                         <Trash className="mr-2 h-4 w-4" />
                         Delete item
                       </DropdownMenuItem>

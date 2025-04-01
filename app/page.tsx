@@ -31,8 +31,8 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Dashboard</h2>
             <div className="flex items-center space-x-4">
-              <Button variant="outline">Export</Button>
-              <Button>New Item</Button>
+              {/* <Button variant="outline">Export</Button>
+              <Button>New Item</Button> */}
             </div>
           </div>
         </header>
@@ -97,7 +97,7 @@ export default function Dashboard() {
           </div>
 
           {/* Financial metrics */}
-          <Card className="mb-8">
+          {/* <Card className="mb-8">
             <CardHeader>
               <CardTitle>Financial Metrics</CardTitle>
               <CardDescription>
@@ -109,11 +109,11 @@ export default function Dashboard() {
                 <FinancialMetrics />
               </Suspense>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Charts and tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card className="col-span-1">
+            {/* <Card className="col-span-1">
               <CardHeader>
                 <CardTitle>Stock Levels</CardTitle>
                 <CardDescription>
@@ -125,8 +125,8 @@ export default function Dashboard() {
                   <StockLevelChart />
                 </Suspense>
               </CardContent>
-            </Card>
-            <Card className="col-span-1">
+            </Card> */}
+            <Card className="col-span-2">
               <CardHeader>
                 <CardTitle>Inventory Summary</CardTitle>
                 <CardDescription>Top categories by value</CardDescription>
