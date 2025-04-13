@@ -12,24 +12,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import InventoryTable from "@/components/inventory/inventory-table";
-import { Dialog } from "@/components/ui/dialog";
-import AddInventoryItemModal from "../modals/add-inventory-item-modal";
+import { InventoryItem } from "@/types/inventory";
+import EditInventoryItemModal from "../modals/edit-inventory-item-modal";
 
 export default function InventoryPage() {
   const [isOpen, setIsOpen] = useState(false);
+  const [finishedAdding, setFinishedAdding] = useState(0);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value.toLowerCase());
+  };
+
+  const filteredItems = items.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm) ||
+      item.sku.toLowerCase().includes(searchTerm)
+  );
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {isOpen && (
-        <AddInventoryItemModal isOpen={isOpen} setIsOpen={setIsOpen} />
+        <EditInventoryItemModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          setFinishedAdding={setFinishedAdding}
+        />
       )}
       {/* Main content */}
       <div className="flex-1">
@@ -71,29 +83,18 @@ export default function InventoryPage() {
                     type="search"
                     placeholder="Search items..."
                     className="pl-8"
+                    onChange={handleSearch}
                   />
-                </div>
-                <div className="flex gap-2">
-                  <Select defaultValue="all">
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="engine">Engine Parts</SelectItem>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="body">Body Parts</SelectItem>
-                      <SelectItem value="suspension">Suspension</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
 
               <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
-                <InventoryTable />
+                <InventoryTable
+                  items={filteredItems}
+                  setItems={setItems}
+                  finishedAdding={finishedAdding}
+                  setFinishedAdding={setFinishedAdding}
+                />
               </Suspense>
             </CardContent>
           </Card>

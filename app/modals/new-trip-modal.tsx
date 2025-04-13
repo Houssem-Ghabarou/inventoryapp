@@ -31,6 +31,7 @@ type InventoryItem = {
   id: string;
   name: string;
   quantity: number;
+  sellPrice: number;
   unitPrice: number;
 };
 
@@ -77,6 +78,7 @@ export default function NewTripModal({
         name: doc.data().name,
         quantity: doc.data().quantity,
         unitPrice: doc.data().unitPrice,
+        sellPrice: doc.data().sellPrice,
       }));
       setItems(itemsList);
 
@@ -126,54 +128,44 @@ export default function NewTripModal({
 
     try {
       // Prepare the trip data
-      const tripItems = selectedItems.map((selectedItem) => {
+      const transactionItems = selectedItems.map((selectedItem) => {
         const item = items.find((i) => i.id === selectedItem.id);
         return {
           itemId: selectedItem.id,
           name: item?.name || "",
           quantity: selectedItem.quantity,
           unitPrice: item?.unitPrice || 0,
+          sellPrice: item?.sellPrice || 0,
           totalValue: selectedItem.quantity * (item?.unitPrice || 0),
+          totalSellValue: selectedItem.quantity * (item?.sellPrice || 0),
         };
       });
 
-      const totalItems = tripItems.reduce(
+      const totalItems = transactionItems.reduce(
         (sum, item) => sum + item.quantity,
         0
       );
-      const totalValue = tripItems.reduce(
+      const totalValue = transactionItems.reduce(
         (sum, item) => sum + item.totalValue,
+        0
+      );
+      const totalSellValue = transactionItems.reduce(
+        (sum, item) => sum + item.totalSellValue,
         0
       );
 
       // Generate a reference code
       const refCode = `TRK-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      const tripData = {
-        reference: refCode,
-        vehicleId: vehicle,
-        vehicleName: vehicles.find((v) => v.id === vehicle)?.name || "",
-        departureDate: serverTimestamp(),
-        status: "out", // out, returned, reconciled
-        items: tripItems,
-        totalItems,
-        totalValue,
-        createdBy: user?.id || "unknown",
-        createdAt: serverTimestamp(),
-      };
-
-      // Add to Firestore
-      const tripsCollection = collection(db, "trips");
-      const tripRef = await addDoc(tripsCollection, tripData);
-
       // Also add a transaction record for this departure
       const transactionData = {
         type: "departure",
         reference: refCode,
-        tripId: tripRef.id,
         date: serverTimestamp(),
         items: totalItems,
         value: totalValue,
+        totalSellPrice: totalSellValue,
+        tripeItems: transactionItems,
         vehicleId: vehicle,
         vehicleName: vehicles.find((v) => v.id === vehicle)?.name || "",
         status: "open",
@@ -197,7 +189,25 @@ export default function NewTripModal({
         }
       }
 
-      setSuccess("Trip created successfully!");
+      // Update inventory totalValue
+      for (const selectedItem of selectedItems) {
+        const item = items.find((i) => i.id === selectedItem.id);
+        if (item) {
+          const newQuantity = item.quantity - selectedItem.quantity;
+          const newTotalValue = newQuantity * item.unitPrice;
+          const newSalesTotalValue = newQuantity * item.sellPrice;
+
+          const itemRef = doc(db, "inventory", selectedItem.id);
+          await updateDoc(itemRef, {
+            quantity: newQuantity,
+            totalValue: newTotalValue,
+            totalSellValue: newSalesTotalValue,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      setSuccess("Transaction created successfully!");
 
       // Reset form after successful submission
       setTimeout(() => {
@@ -222,6 +232,13 @@ export default function NewTripModal({
     return selectedItems.reduce((total, selectedItem) => {
       const item = items.find((i) => i.id === selectedItem.id);
       return total + selectedItem.quantity * (item?.unitPrice || 0);
+    }, 0);
+  };
+
+  const calculateTotalSellValue = () => {
+    return selectedItems.reduce((total, selectedItem) => {
+      const item = items.find((i) => i.id === selectedItem.id);
+      return total + selectedItem.quantity * (item?.sellPrice || 0);
     }, 0);
   };
 
@@ -403,6 +420,19 @@ export default function NewTripModal({
                       </div>
                       <div className="col-span-2 text-right font-medium">
                         {formatCurrency(calculateTotalValue())}
+                      </div>
+                    </div>
+                    {/* total sales */}
+                    <div className="grid grid-cols-12 gap-2 p-3 border-t bg-gray-50">
+                      <div className="col-span-5 font-medium">
+                        Total sale value
+                      </div>
+                      <div className="col-span-2"></div>
+                      <div className="col-span-3 font-medium">
+                        {calculateTotalItems()} items
+                      </div>
+                      <div className="col-span-2 text-right font-medium">
+                        {formatCurrency(calculateTotalSellValue())}
                       </div>
                     </div>
                   </div>

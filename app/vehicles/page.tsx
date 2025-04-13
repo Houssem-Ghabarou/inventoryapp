@@ -69,20 +69,12 @@ export default function VehiclesPage() {
               <Tabs defaultValue="list" className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="list">List View</TabsTrigger>
-                  <TabsTrigger value="map">Map View</TabsTrigger>
                 </TabsList>
                 <TabsContent value="list">
                   <Suspense
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
                     <VehiclesList />
-                  </Suspense>
-                </TabsContent>
-                <TabsContent value="map">
-                  <Suspense
-                    fallback={<Skeleton className="h-[500px] w-full" />}
-                  >
-                    <VehiclesMap />
                   </Suspense>
                 </TabsContent>
               </Tabs>

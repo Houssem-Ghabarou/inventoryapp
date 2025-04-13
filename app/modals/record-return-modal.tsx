@@ -31,6 +31,7 @@ import { db } from "@/firebase/config";
 import { useAuth } from "@/contexts/auth-context";
 
 type TripItem = {
+  sellPrice: number;
   itemId: string;
   name: string;
   quantity: number;
@@ -39,6 +40,7 @@ type TripItem = {
 };
 
 type Trip = {
+  tripeItems: TripItem[];
   id: string;
   reference: string;
   vehicleId: string;
@@ -47,9 +49,11 @@ type Trip = {
   driverName: string;
   departureDate: any;
   status: string;
-  items: TripItem[];
+  items: number;
   totalItems: number;
   totalValue: number;
+  sellPrice: number;
+  totalSellPrice: number;
 };
 
 export default function RecordReturnModal({
@@ -62,7 +66,9 @@ export default function RecordReturnModal({
   const [tripId, setTripId] = useState("");
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
+  console.log(trips, "tripsssssss");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  console.log(selectedTrip, "sssssssss");
   const [returnItems, setReturnItems] = useState<Record<string, number>>({});
   const [summary, setSummary] = useState({
     totalItemsReturned: 0,
@@ -83,25 +89,27 @@ export default function RecordReturnModal({
     setLoading(true);
     try {
       // Query trips with status "out"
-      const tripsCollection = collection(db, "trips");
-      console.log(tripsCollection);
-      const q = query(tripsCollection, where("status", "==", "out"));
-      const tripsSnapshot = await getDocs(q);
+      const transactionsCollection = collection(db, "transactions");
+      const q = query(transactionsCollection, where("status", "==", "open"));
+      const transactionSnap = await getDocs(q);
 
-      const tripsList = tripsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        reference: doc.data().reference,
-        vehicleId: doc.data().vehicleId,
-        vehicleName: doc.data().vehicleName,
-        driverId: doc.data().driverId,
-        driverName: doc.data().driverName,
-        departureDate: doc.data().departureDate,
-        status: doc.data().status,
-        items: doc.data().items,
-        totalItems: doc.data().totalItems,
-        totalValue: doc.data().totalValue,
-      }));
+      const tripsList = transactionSnap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          reference: data.reference,
+          vehicleId: data.vehicleId,
+          vehicleName: data.vehicleName,
+          tripeItems: Array.isArray(data.tripeItems) ? data.tripeItems : [],
+          departureDate: data.createdAt,
+          status: data.status,
+          items: data.items,
+          totalItems: data.totalItems,
+          totalValue: data.totalValue,
+        };
+      });
 
+      //@ts-ignore
       setTrips(tripsList);
     } catch (err) {
       console.error("Error fetching active trips:", err);
@@ -121,7 +129,7 @@ export default function RecordReturnModal({
       // Initialize return items with 0
       if (trip) {
         const initialReturnItems: Record<string, number> = {};
-        trip.items.forEach((item) => {
+        trip.tripeItems.forEach((item) => {
           initialReturnItems[item.itemId] = 0;
         });
         setReturnItems(initialReturnItems);
@@ -141,15 +149,16 @@ export default function RecordReturnModal({
     let totalItemsSold = 0;
     let totalValueSold = 0;
 
-    selectedTrip.items.forEach((item) => {
+    selectedTrip.tripeItems.forEach((item) => {
       const returnedQty = returnItems[item.itemId] || 0;
       const soldQty = item.quantity - returnedQty;
 
       totalItemsReturned += returnedQty;
       totalValueReturned += returnedQty * item.unitPrice;
 
+      console.log(item, "iteeeeeeee");
       totalItemsSold += soldQty;
-      totalValueSold += soldQty * item.unitPrice;
+      totalValueSold += soldQty * item.sellPrice;
     });
 
     setSummary({
@@ -162,7 +171,7 @@ export default function RecordReturnModal({
 
   const handleReturnChange = (itemId: string, value: string) => {
     const qty = Number.parseInt(value) || 0;
-    const item = selectedTrip?.items.find((i) => i.itemId === itemId);
+    const item = selectedTrip?.tripeItems.find((i) => i.itemId === itemId);
 
     if (item && qty <= item.quantity) {
       setReturnItems((prev) => ({
@@ -186,7 +195,7 @@ export default function RecordReturnModal({
 
     try {
       // Prepare the return data
-      const returnedItems = selectedTrip.items.map((item) => {
+      const returnedItems = selectedTrip.tripeItems.map((item) => {
         const returnedQty = returnItems[item.itemId] || 0;
         const soldQty = item.quantity - returnedQty;
         return {
@@ -201,38 +210,24 @@ export default function RecordReturnModal({
         };
       });
 
-      // Update the trip status
-      const tripRef = doc(db, "trips", selectedTrip.id);
-      await updateDoc(tripRef, {
-        status: "returned",
-        returnDate: serverTimestamp(),
-        returnedItems: returnedItems,
-        totalItemsReturned: summary.totalItemsReturned,
-        totalValueReturned: summary.totalValueReturned,
-        totalItemsSold: summary.totalItemsSold,
-        totalValueSold: summary.totalValueSold,
-        updatedAt: serverTimestamp(),
-      });
-
-      // Create a return transaction
+      // Create a return transaction - INDEPENDENT TRANSACTION RECORD
       const transactionData = {
         type: "return",
-        reference: selectedTrip.reference,
+        reference: `RET-${selectedTrip.reference}`,
         tripId: selectedTrip.id,
         date: serverTimestamp(),
         items: summary.totalItemsReturned,
         value: summary.totalValueReturned,
-        driverId: selectedTrip.driverId,
-        driverName: selectedTrip.driverName,
         vehicleId: selectedTrip.vehicleId,
         vehicleName: selectedTrip.vehicleName,
-        status: "open",
+        status: "completed",
+        returnedItems: returnedItems,
         createdBy: user?.id || "unknown",
         createdAt: serverTimestamp(),
       };
 
       const transactionsCollection = collection(db, "transactions");
-      await addDoc(transactionsCollection, transactionData);
+      const returned = await addDoc(transactionsCollection, transactionData);
 
       // Update inventory quantities for returned items
       for (const [itemId, quantity] of Object.entries(returnItems)) {
@@ -243,14 +238,89 @@ export default function RecordReturnModal({
 
           if (itemDoc.exists()) {
             const currentQuantity = itemDoc.data().quantity || 0;
+            const unitPrice = itemDoc.data().unitPrice || 0;
+            const newQuantity = currentQuantity + quantity;
+            const newTotalValue = newQuantity * unitPrice;
+
             // Update with returned quantity
             await updateDoc(itemRef, {
-              quantity: currentQuantity + quantity,
+              quantity: newQuantity,
+              totalValue: newTotalValue,
+              stockStatus:
+                newQuantity <= 0
+                  ? "out_of_stock"
+                  : newQuantity <= (itemDoc.data().minStock || 0)
+                  ? "low_stock"
+                  : "in_stock",
               updatedAt: serverTimestamp(),
             });
           }
         }
       }
+
+      // Create a sales transaction record if there were sales
+      if (summary.totalItemsSold > 0) {
+        const salesTransactionData = {
+          returnId: returned.id,
+          type: "sale",
+          reference: `SALE-${selectedTrip.reference}`,
+          tripId: selectedTrip.id,
+          date: serverTimestamp(),
+          items: summary.totalItemsSold,
+          value: summary.totalValueSold,
+          vehicleId: selectedTrip.vehicleId,
+          vehicleName: selectedTrip.vehicleName,
+          status: "completed",
+          soldItems: returnedItems.map((item) => ({
+            itemId: item.itemId,
+            name: item.name,
+            quantity: item.quantitySold,
+            unitPrice: item.unitPrice,
+            sellPrice: item.unitPrice,
+            totalValue: item.soldValue,
+          })),
+          createdBy: user?.id || "unknown",
+          createdAt: serverTimestamp(),
+        };
+
+        await addDoc(transactionsCollection, salesTransactionData);
+      }
+
+      // Create a sales document to save historical transactions
+      const salesDocumentData = {
+        tripId: selectedTrip.id,
+        reference: `SALES-${selectedTrip.reference}`,
+        date: serverTimestamp(),
+        totalItemsSold: summary.totalItemsSold,
+        totalValueSold: summary.totalValueSold,
+        totalItemsReturned: summary.totalItemsReturned,
+        totalValueReturned: summary.totalValueReturned,
+        soldItems: returnedItems.map((item) => ({
+          itemId: item.itemId,
+          name: item.name,
+          quantitySold: item.quantitySold,
+          unitPrice: item.unitPrice,
+          totalValue: item.soldValue,
+        })),
+        returnedItems: returnedItems.map((item) => ({
+          itemId: item.itemId,
+          name: item.name,
+          quantityReturned: item.quantityReturned,
+          unitPrice: item.unitPrice,
+          totalValue: item.returnValue,
+        })),
+        createdBy: user?.id || "unknown",
+        createdAt: serverTimestamp(),
+      };
+
+      const salesCollection = collection(db, "sales");
+      await addDoc(salesCollection, salesDocumentData);
+      ///update open transaction to completed
+      const tripRef = doc(db, "transactions", selectedTrip.id);
+      await updateDoc(tripRef, {
+        status: "completed",
+        updatedAt: serverTimestamp(),
+      });
 
       setSuccess("Return recorded successfully!");
 
@@ -322,7 +392,7 @@ export default function RecordReturnModal({
                 <SelectContent>
                   {trips.map((trip) => (
                     <SelectItem key={trip.id} value={trip.id}>
-                      {trip.reference} - {trip.vehicleName} ({trip.driverName})
+                      {trip.reference} - {trip.vehicleName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -345,9 +415,6 @@ export default function RecordReturnModal({
                         {selectedTrip.reference} - {selectedTrip.vehicleName}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Driver: {selectedTrip.driverName}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
                         Departure:{" "}
                         {selectedTrip.departureDate
                           ? new Date(
@@ -364,10 +431,10 @@ export default function RecordReturnModal({
                 <div className="space-y-4">
                   <h3 className="font-medium">Return Items</h3>
 
-                  {selectedTrip.items.map((item) => {
+                  {selectedTrip.tripeItems.map((item) => {
                     const returnedQty = returnItems[item.itemId] || 0;
                     const soldQty = item.quantity - returnedQty;
-                    const soldValue = soldQty * item.unitPrice;
+                    const soldValue = soldQty * item.sellPrice;
 
                     return (
                       <div key={item.itemId} className="space-y-2">

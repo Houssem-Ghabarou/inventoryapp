@@ -67,7 +67,7 @@ export default function TransactionsPage() {
 
         <main className="p-6">
           {/* Financial Summary */}
-          <Card className="mb-6">
+          {/* <Card className="mb-6">
             <CardHeader className="pb-3">
               <CardTitle>Sales Summary</CardTitle>
               <CardDescription>
@@ -79,7 +79,7 @@ export default function TransactionsPage() {
                 <TransactionsSummary />
               </Suspense>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Transactions */}
           <Card className="mb-6">

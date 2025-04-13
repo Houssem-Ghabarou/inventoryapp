@@ -21,80 +21,33 @@ import InventorySummary from "@/components/dashboard/inventory-summary";
 import RecentActivities from "@/components/dashboard/recent-activities";
 import StockLevelChart from "@/components/dashboard/stock-level-chart";
 import FinancialMetrics from "@/components/dashboard/financial-metrics";
+import DashboardStats from "@/components/dashboard/dashboard-stats";
 
 export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Main content */}
-      <div className="flex-1 ">
+      <div className="flex-1">
         <header className="bg-white border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Dashboard</h2>
-            <div className="flex items-center space-x-4">
-              {/* <Button variant="outline">Export</Button>
-              <Button>New Item</Button> */}
-            </div>
           </div>
         </header>
 
         <main className="p-6">
           {/* Stats overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1,248</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-emerald-500">↑ 12%</span> from last
-                  month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Inventory Value
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">$125,750</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-emerald-500">↑ 5.2%</span> from last
-                  month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Active Vehicles
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">18</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-emerald-500">↑ 2</span> since yesterday
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Today's Sales
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">$3,450</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-emerald-500">↑ 18%</span> from yesterday
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <Suspense
+            fallback={
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+              </div>
+            }
+          >
+            <DashboardStats />
+          </Suspense>
 
           {/* Financial metrics */}
           {/* <Card className="mb-8">
@@ -113,7 +66,7 @@ export default function Dashboard() {
 
           {/* Charts and tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* <Card className="col-span-1">
+            <Card className="col-span-1">
               <CardHeader>
                 <CardTitle>Stock Levels</CardTitle>
                 <CardDescription>
@@ -125,8 +78,8 @@ export default function Dashboard() {
                   <StockLevelChart />
                 </Suspense>
               </CardContent>
-            </Card> */}
-            <Card className="col-span-2">
+            </Card>
+            <Card className="col-span-1">
               <CardHeader>
                 <CardTitle>Inventory Summary</CardTitle>
                 <CardDescription>Top categories by value</CardDescription>

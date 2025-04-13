@@ -37,29 +37,30 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
+import EditInventoryItemModal from "@/app/modals/edit-inventory-item-modal";
+import { InventoryItem } from "@/types/inventory";
 
-type InventoryItem = {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  quantity: number;
-  minStock: number;
-  unitPrice: number;
-  totalValue: number;
-  location: string;
-  lastUpdated: string | any;
-};
+export default function InventoryTable({
+  finishedAdding,
+  setFinishedAdding,
+  items,
+  setItems,
+}: {
+  finishedAdding: number;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
+  items: InventoryItem[];
+  setItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+}) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
 
-export default function InventoryTable() {
-  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortColumn, setSortColumn] = useState<keyof InventoryItem>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     fetchInventoryItems();
-  }, []);
+  }, [finishedAdding]);
 
   const fetchInventoryItems = async () => {
     setLoading(true);
@@ -77,15 +78,17 @@ export default function InventoryTable() {
           category: data.category,
           quantity: data.quantity,
           minStock: data.minStock || 0,
+          sellPrice: data.sellPrice || 0,
+          totalSellPrice: data.totalSellPrice,
           unitPrice: data.unitPrice,
           totalValue: data.totalValue,
-          location: data.location,
           lastUpdated: data.updatedAt
             ? new Date(data.updatedAt.seconds * 1000).toLocaleDateString()
             : "N/A",
         };
       });
 
+      //@ts-ignore
       setItems(inventoryItems);
     } catch (error) {
       console.error("Error fetching inventory items:", error);
@@ -177,7 +180,7 @@ export default function InventoryTable() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "TND",
     }).format(amount);
   };
 
@@ -189,8 +192,21 @@ export default function InventoryTable() {
     );
   }
 
+  const handleEditItem = (id: string) => {
+    setSelectedItemId(id);
+    setEditOpen(true);
+  };
   return (
     <div className="overflow-x-auto">
+      {editOpen && (
+        <EditInventoryItemModal
+          isEditing={true}
+          setFinishedAdding={setFinishedAdding}
+          isOpen={editOpen}
+          itemId={selectedItemId}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
       <Table>
         <TableHeader>
           <TableRow>
@@ -235,6 +251,7 @@ export default function InventoryTable() {
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
+
             <TableHead>
               <Button
                 variant="ghost"
@@ -245,13 +262,33 @@ export default function InventoryTable() {
                 <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("unitPrice")}
+                className="-ml-4"
+              >
+                Sell Price
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("totalSellPrice")}
+                className="-ml-4"
+              >
+                Total Sell value
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+              </Button>
+            </TableHead>
             <TableHead>Stock Status</TableHead>
-            <TableHead>Location</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedItems.map((item) => {
+            console.log(item, "item");
             const stockStatus = getStockStatus(item);
             return (
               <TableRow key={item.id}>
@@ -269,11 +306,20 @@ export default function InventoryTable() {
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    {item.unitPrice.toFixed(2)}
+                    {item?.unitPrice?.toFixed(2)}
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">
                   {formatCurrency(item.totalValue)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    {item?.sellPrice?.toFixed(2)}
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">
+                  {formatCurrency(item.totalSellPrice)}
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
@@ -284,7 +330,6 @@ export default function InventoryTable() {
                     />
                   </div>
                 </TableCell>
-                <TableCell>{item.location}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -296,7 +341,9 @@ export default function InventoryTable() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem>View details</DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleEditItem(item?.id)}
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit item
                       </DropdownMenuItem>
