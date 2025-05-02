@@ -197,9 +197,9 @@ export default function RecentActivities() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
-      currency: "USD",
+      currency: "TND",
     }).format(amount);
   };
 
@@ -245,8 +245,7 @@ export default function RecentActivities() {
               <TableCell>{activity.quantity}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  {activity.value?.toFixed(2) || "0.00"}
+                  {[formatCurrency(activity.value) || "0.00"]}
                 </div>
               </TableCell>
               <TableCell>{formatDate(activity.date)}</TableCell>
