@@ -38,7 +38,7 @@ import {
 import { db } from "@/firebase/config";
 import EditReturnModal from "@/app/modals/edit-return-modal";
 import EditTripModal from "@/app/modals/edit-trip-modal";
-
+import InvoiceModal from "@/app/modals/invoiceModal";
 type Transaction = {
   id: string;
   type: "departure" | "return" | "sale";
@@ -70,6 +70,7 @@ export default function TransactionsTable({
   const [selectedTransactionId, setSelectedTransactionId] =
     useState<string>("");
 
+  const [modalInvoicOpen, setModalInvoicOpen] = useState(false);
   useEffect(() => {
     fetchTransactions();
   }, [type]);
@@ -281,8 +282,18 @@ export default function TransactionsTable({
     );
   }
 
+  const handleInvoiceClick = (transactionId: string) => {
+    // Handle the invoice click here
+    console.log("Invoice clicked for transaction ID:", transactionId);
+    setModalInvoicOpen(true);
+  };
+
   return (
     <>
+      {modalInvoicOpen && (
+        <InvoiceModal isOpen={modalInvoicOpen} setIsOpen={setModalInvoicOpen} />
+      )}
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -301,58 +312,60 @@ export default function TransactionsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow
-                key={transaction.id}
-                className={
-                  transaction.type === "return"
-                    ? "bg-purple-50/30"
-                    : transaction.type === "sale"
-                    ? "bg-emerald-50/30"
-                    : ""
-                }
-              >
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getTypeIcon(transaction.type)}
-                    {getTypeBadge(transaction.type)}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {transaction.reference}
-                </TableCell>
-                <TableCell>{formatDate(transaction.date)}</TableCell>
-                <TableCell>{transaction.items} items</TableCell>
-                <TableCell className="font-medium">
-                  {formatCurrency(transaction.value)}
-                </TableCell>
-                <TableCell>
-                  {transaction.type === "return"
-                    ? "--"
-                    : transaction.totalSellPrice != null
-                    ? formatCurrency(transaction.value)
-                    : "--"}
-                </TableCell>
+            {transactions.map((transaction) => {
+              console.log(transaction, "transaction");
+              return (
+                <TableRow
+                  key={transaction.id}
+                  className={
+                    transaction.type === "return"
+                      ? "bg-purple-50/30"
+                      : transaction.type === "sale"
+                      ? "bg-emerald-50/30"
+                      : ""
+                  }
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getTypeIcon(transaction.type)}
+                      {getTypeBadge(transaction.type)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {transaction.reference}
+                  </TableCell>
+                  <TableCell>{formatDate(transaction.date)}</TableCell>
+                  <TableCell>{transaction.items} items</TableCell>
+                  <TableCell className="font-medium">
+                    {formatCurrency(transaction.value)}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.type === "return"
+                      ? "--"
+                      : transaction.totalSellPrice != null
+                      ? formatCurrency(transaction.value)
+                      : "--"}
+                  </TableCell>
 
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <TruckIcon className="h-4 w-4 text-muted-foreground" />
-                    {transaction.vehicle.name}
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(transaction.status)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {/* <DropdownMenuItem>View details</DropdownMenuItem> */}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <TruckIcon className="h-4 w-4 text-muted-foreground" />
+                      {transaction.vehicle.name}
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(transaction.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* <DropdownMenuItem>View details</DropdownMenuItem> */}
 
-                      {/* {transaction.type === "departure" && (
+                        {/* {transaction.type === "departure" && (
                         <DropdownMenuItem
                           onClick={() =>
                             handleEditTransaction(
@@ -366,18 +379,29 @@ export default function TransactionsTable({
                         </DropdownMenuItem>
                       )} */}
 
-                      {transaction.type === "departure" &&
+                        {/* {transaction.type === "departure" &&
                         transaction.status === "open" && (
                           <DropdownMenuItem data-modal-trigger="record-return">
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Record Return
                           </DropdownMenuItem>
+                        )} */}
+
+                        {transaction.type === "sale" && (
+                          //invoice
+                          <DropdownMenuItem
+                            onClick={() => handleInvoiceClick(transaction.id)}
+                          >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Invoice
+                          </DropdownMenuItem>
                         )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
