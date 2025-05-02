@@ -165,7 +165,7 @@ export default function FinancialMetrics() {
       y: {
         beginAtZero: false,
         ticks: {
-          callback: (value: any) => "$" + value.toLocaleString(),
+          callback: (value: any) => "TND" + value.toLocaleString(),
         },
       },
     },

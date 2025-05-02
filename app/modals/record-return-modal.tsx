@@ -156,7 +156,6 @@ export default function RecordReturnModal({
       totalItemsReturned += returnedQty;
       totalValueReturned += returnedQty * item.unitPrice;
 
-      console.log(item, "iteeeeeeee");
       totalItemsSold += soldQty;
       totalValueSold += soldQty * item.sellPrice;
     });
