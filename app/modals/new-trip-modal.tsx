@@ -44,9 +44,13 @@ type Vehicle = {
 export default function NewTripModal({
   isOpen,
   setIsOpen,
+  finishedAdding,
+  setFinishedAdding,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  finishedAdding: number;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<
@@ -208,10 +212,12 @@ export default function NewTripModal({
       }
 
       setSuccess("Transaction created successfully!");
+      setFinishedAdding((prev: number) => prev + 1);
+      setIsOpen(false);
 
       // Reset form after successful submission
       setTimeout(() => {
-        setIsOpen(false);
+        // setIsOpen(false);
         setSelectedItems([]);
         setVehicle("");
         setSuccess("");

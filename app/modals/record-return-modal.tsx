@@ -59,16 +59,18 @@ type Trip = {
 export default function RecordReturnModal({
   isOpen,
   setIsOpen,
+  setFinishedAdding,
+  finishedAdding,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
+  finishedAdding: number;
 }) {
   const [tripId, setTripId] = useState("");
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
-  console.log(trips, "tripsssssss");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  console.log(selectedTrip, "sssssssss");
   const [returnItems, setReturnItems] = useState<Record<string, number>>({});
   const [summary, setSummary] = useState({
     totalItemsReturned: 0,
@@ -323,9 +325,12 @@ export default function RecordReturnModal({
 
       setSuccess("Return recorded successfully!");
 
+      setFinishedAdding((prev) => prev + 1);
+
+      setIsOpen(false);
       // Reset form after successful submission
       setTimeout(() => {
-        setIsOpen(false);
+        // setIsOpen(false);
         setTripId("");
         setSelectedTrip(null);
         setReturnItems({});

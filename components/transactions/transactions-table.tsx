@@ -57,11 +57,15 @@ type Transaction = {
 interface TransactionsTableProps {
   type: "all" | "departure" | "return" | "sale";
   limitCount?: number;
+  finishedAdding?: number;
+  setFinishedAdding?: (value: number) => void;
 }
 
 export default function TransactionsTable({
   type,
   limitCount = 100,
+  finishedAdding,
+  setFinishedAdding,
 }: TransactionsTableProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +78,11 @@ export default function TransactionsTable({
   useEffect(() => {
     fetchTransactions();
   }, [type]);
+  useEffect(() => {
+    if (finishedAdding) {
+      fetchTransactions();
+    }
+  }, [finishedAdding]);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -83,16 +92,16 @@ export default function TransactionsTable({
       // Build query based on type
       let q = query(
         transactionsCollection,
-        orderBy("date", "desc"),
-        limit(limitCount)
+        orderBy("date", "desc")
+        // limit(limitCount)
       );
 
       if (type !== "all") {
         q = query(
           transactionsCollection,
           where("type", "==", type),
-          orderBy("date", "desc"),
-          limit(limitCount)
+          orderBy("date", "desc")
+          // limit(limitCount)
         );
       }
 
@@ -140,12 +149,14 @@ export default function TransactionsTable({
     setEditReturnModalOpen(false);
     setSelectedTransactionId("");
     // Refresh the transactions after editing
+
     fetchTransactions();
   };
 
   const closeEditTripModal = () => {
     setEditTripModalOpen(false);
     setSelectedTransactionId("");
+    console.log("closeEditTripModal");
     // Refresh the transactions after editing
     fetchTransactions();
   };

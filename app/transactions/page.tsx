@@ -28,11 +28,25 @@ import NewTripModal from "../modals/new-trip-modal";
 export default function TransactionsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [departureOpen, setDepartureOpen] = useState(false);
+  const [finishedAdding, setFinishedAdding] = useState(0);
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {isOpen && <RecordReturnModal isOpen={isOpen} setIsOpen={setIsOpen} />}
+      {isOpen && (
+        <RecordReturnModal
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          setFinishedAdding={setFinishedAdding}
+          finishedAdding={finishedAdding}
+        />
+      )}
+
       {departureOpen && (
-        <NewTripModal isOpen={departureOpen} setIsOpen={setDepartureOpen} />
+        <NewTripModal
+          isOpen={departureOpen}
+          setIsOpen={setDepartureOpen}
+          setFinishedAdding={setFinishedAdding}
+          finishedAdding={finishedAdding}
+        />
       )}
       {/* Sidebar */}
       {/* Main content */}
@@ -116,21 +130,33 @@ export default function TransactionsPage() {
                   <Suspense
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
-                    <TransactionsTable type="all" />
+                    <TransactionsTable
+                      type="all"
+                      setFinishedAdding={setFinishedAdding}
+                      finishedAdding={finishedAdding}
+                    />
                   </Suspense>
                 </TabsContent>
                 <TabsContent value="departure">
                   <Suspense
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
-                    <TransactionsTable type="departure" />
+                    <TransactionsTable
+                      type="departure"
+                      setFinishedAdding={setFinishedAdding}
+                      finishedAdding={finishedAdding}
+                    />
                   </Suspense>
                 </TabsContent>
                 <TabsContent value="return">
                   <Suspense
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
-                    <TransactionsTable type="return" />
+                    <TransactionsTable
+                      type="return"
+                      setFinishedAdding={setFinishedAdding}
+                      finishedAdding={finishedAdding}
+                    />
                   </Suspense>
                 </TabsContent>
               </Tabs>
