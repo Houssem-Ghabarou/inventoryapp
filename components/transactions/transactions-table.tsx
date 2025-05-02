@@ -324,15 +324,14 @@ export default function TransactionsTable({
                 <TableCell>{formatDate(transaction.date)}</TableCell>
                 <TableCell>{transaction.items} items</TableCell>
                 <TableCell className="font-medium">
-                  {/* {formatCurrency(transaction.value)} */}
+                  {formatCurrency(transaction.value)}
                 </TableCell>
                 <TableCell>
-                  {/* {transaction.type === "return"
+                  {transaction.type === "return"
                     ? "--"
                     : transaction.totalSellPrice != null
                     ? formatCurrency(transaction.value)
-                    : "--"} */}
-                  {formatCurrency(transaction.value)}
+                    : "--"}
                 </TableCell>
 
                 <TableCell>
