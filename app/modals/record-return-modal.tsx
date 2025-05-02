@@ -340,9 +340,9 @@ export default function RecordReturnModal({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
-      currency: "USD",
+      currency: "TND",
     }).format(amount);
   };
 

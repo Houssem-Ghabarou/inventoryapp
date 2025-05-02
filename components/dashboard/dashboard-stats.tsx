@@ -8,9 +8,9 @@ export default function DashboardStats() {
   const { stats, loading } = useDashboardStats();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
-      currency: "USD",
+      currency: "TND",
     }).format(amount);
   };
 

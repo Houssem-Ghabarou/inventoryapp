@@ -455,7 +455,7 @@ export default function EditInventoryItemModal({
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>Total Value:</div>
                   <div className="text-right font-medium">
-                    TND${(formData.unitPrice * formData.quantity).toFixed(2)}
+                    TND{(formData.unitPrice * formData.quantity).toFixed(2)}
                   </div>
 
                   <div>Stock Status:</div>

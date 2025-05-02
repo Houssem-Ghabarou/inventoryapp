@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { TruckIcon, RotateCcw, DollarSign, ShoppingCart } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import { TruckIcon, RotateCcw, DollarSign, ShoppingCart } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function TransactionsSummary() {
   const [summary, setSummary] = useState({
@@ -12,8 +12,8 @@ export default function TransactionsSummary() {
     totalSales: 0,
     pendingReturns: 0,
     averageSalesPerTrip: 0,
-  })
-  const [loading, setLoading] = useState(true)
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Simulate fetching data
@@ -25,20 +25,24 @@ export default function TransactionsSummary() {
         totalSales: 8450,
         pendingReturns: 3,
         averageSalesPerTrip: 938,
-      })
-      setLoading(false)
-    }, 1000)
-  }, [])
+      });
+      setLoading(false);
+    }, 1000);
+  }, []);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
+      currency: "TND",
+    }).format(amount);
+  };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-[100px]">Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-[100px]">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -47,8 +51,12 @@ export default function TransactionsSummary() {
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Trucks</p>
-              <h3 className="text-2xl font-bold mt-1">{summary.activeTrucks}</h3>
+              <p className="text-sm font-medium text-muted-foreground">
+                Active Trucks
+              </p>
+              <h3 className="text-2xl font-bold mt-1">
+                {summary.activeTrucks}
+              </h3>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span>{summary.pendingReturns} pending returns</span>
               </p>
@@ -64,8 +72,12 @@ export default function TransactionsSummary() {
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Departures</p>
-              <h3 className="text-2xl font-bold mt-1">{summary.totalDepartures}</h3>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Departures
+              </p>
+              <h3 className="text-2xl font-bold mt-1">
+                {summary.totalDepartures}
+              </h3>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span>{summary.totalReturns} returns recorded</span>
               </p>
@@ -81,8 +93,12 @@ export default function TransactionsSummary() {
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-              <h3 className="text-2xl font-bold mt-1">{formatCurrency(summary.totalSales)}</h3>
+              <p className="text-sm font-medium text-muted-foreground">
+                Total Sales
+              </p>
+              <h3 className="text-2xl font-bold mt-1">
+                {formatCurrency(summary.totalSales)}
+              </h3>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span>From all reconciled trips</span>
               </p>
@@ -98,8 +114,12 @@ export default function TransactionsSummary() {
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Avg. Sales Per Trip</p>
-              <h3 className="text-2xl font-bold mt-1">{formatCurrency(summary.averageSalesPerTrip)}</h3>
+              <p className="text-sm font-medium text-muted-foreground">
+                Avg. Sales Per Trip
+              </p>
+              <h3 className="text-2xl font-bold mt-1">
+                {formatCurrency(summary.averageSalesPerTrip)}
+              </h3>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
                 <span>Based on reconciled trips</span>
               </p>
@@ -111,6 +131,5 @@ export default function TransactionsSummary() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

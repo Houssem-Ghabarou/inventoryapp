@@ -178,7 +178,7 @@ export default function InventoryTable({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
       currency: "TND",
     }).format(amount);
@@ -305,8 +305,7 @@ export default function InventoryTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    {item?.unitPrice?.toFixed(2)}
+                    {formatCurrency(item.unitPrice)}
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">
@@ -314,8 +313,7 @@ export default function InventoryTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    {item?.sellPrice?.toFixed(2)}
+                    {formatCurrency(item.sellPrice)}
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">

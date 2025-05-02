@@ -231,9 +231,9 @@ export default function TransactionsTable({
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("fr-TN", {
       style: "currency",
-      currency: "USD",
+      currency: "TND",
     }).format(amount);
   };
 
@@ -324,12 +324,15 @@ export default function TransactionsTable({
                 <TableCell>{formatDate(transaction.date)}</TableCell>
                 <TableCell>{transaction.items} items</TableCell>
                 <TableCell className="font-medium">
-                  {formatCurrency(transaction.value)}
+                  {/* {formatCurrency(transaction.value)} */}
                 </TableCell>
-                <TableCell className="font-medium">
-                  {transaction.type === "return"
+                <TableCell>
+                  {/* {transaction.type === "return"
                     ? "--"
-                    : formatCurrency(transaction.totalSellPrice)}
+                    : transaction.totalSellPrice != null
+                    ? formatCurrency(transaction.value)
+                    : "--"} */}
+                  {formatCurrency(transaction.value)}
                 </TableCell>
 
                 <TableCell>
