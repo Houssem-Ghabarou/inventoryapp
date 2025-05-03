@@ -12,7 +12,6 @@ export default function ProtectedRoute({
   children: React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
-  console.log(user, "usssssser");
   const router = useRouter();
   const pathname = usePathname();
 
@@ -23,14 +22,12 @@ export default function ProtectedRoute({
       pathname !== "/login" &&
       pathname !== "/register"
     ) {
-      console.log("her e1");
       router.push("/login");
     }
   }, [user, isLoading, router, pathname]);
 
   useEffect(() => {
     if (pathname === "/login" && user) {
-      console.log("here");
       router.push("/");
     }
   }, [pathname, user, router]);

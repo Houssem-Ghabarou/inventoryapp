@@ -109,7 +109,6 @@ export default function EditInventoryItemModal({
   const fetchItemData = async () => {
     setLoading(true);
     try {
-      console.log(itemId, "item");
       if (!itemId) {
         setLoading(false);
         return;
@@ -178,9 +177,12 @@ export default function EditInventoryItemModal({
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
-  };
 
+    // Allow empty input for better UX
+    if (/^\d*\.?\d*$/.test(value)) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -393,7 +395,7 @@ export default function EditInventoryItemModal({
                     name="quantity"
                     type="number"
                     min="0"
-                    value={formData.quantity}
+                    value={formData.quantity || ""}
                     onChange={handleNumberChange}
                     required
                   />
@@ -406,7 +408,7 @@ export default function EditInventoryItemModal({
                     name="minStock"
                     type="number"
                     min="0"
-                    value={formData.minStock}
+                    value={formData.minStock || ""}
                     onChange={handleNumberChange}
                   />
                 </div>
@@ -418,8 +420,8 @@ export default function EditInventoryItemModal({
                     name="unitPrice"
                     type="number"
                     min="0"
-                    step="0.01"
-                    value={formData.unitPrice}
+                    step="1"
+                    value={formData.unitPrice || ""}
                     onChange={handleNumberChange}
                     required
                   />
@@ -431,8 +433,8 @@ export default function EditInventoryItemModal({
                     name="sellPrice"
                     type="number"
                     min="0"
-                    step="0.01"
-                    value={formData.sellPrice}
+                    step="1"
+                    value={formData.sellPrice || ""}
                     onChange={handleNumberChange}
                     required
                   />

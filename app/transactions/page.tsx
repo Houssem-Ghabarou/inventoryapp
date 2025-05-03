@@ -29,6 +29,7 @@ export default function TransactionsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [departureOpen, setDepartureOpen] = useState(false);
   const [finishedAdding, setFinishedAdding] = useState(0);
+  const [searchQ, setSearchQ] = useState("");
   return (
     <div className="flex min-h-screen bg-gray-50">
       {isOpen && (
@@ -109,8 +110,10 @@ export default function TransactionsPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search by reference or vehicle..."
+                    placeholder="Search by reference ,price (example :260==> 260DT) or vehicle..."
                     className="pl-8"
+                    value={searchQ}
+                    onChange={(e) => setSearchQ(e.target.value)}
                   />
                 </div>
                 <div className="flex gap-2">
@@ -123,6 +126,7 @@ export default function TransactionsPage() {
               <Tabs defaultValue="all" className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="all">All Transactions</TabsTrigger>
+                  <TabsTrigger value="sale">Sales</TabsTrigger>
                   <TabsTrigger value="departure">Departures</TabsTrigger>
                   <TabsTrigger value="return">Returns</TabsTrigger>
                 </TabsList>
@@ -131,7 +135,20 @@ export default function TransactionsPage() {
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
                     <TransactionsTable
+                      searchQ={searchQ}
                       type="all"
+                      setFinishedAdding={setFinishedAdding}
+                      finishedAdding={finishedAdding}
+                    />
+                  </Suspense>
+                </TabsContent>
+                <TabsContent value="sale">
+                  <Suspense
+                    fallback={<Skeleton className="h-[500px] w-full" />}
+                  >
+                    <TransactionsTable
+                      searchQ={searchQ}
+                      type="sale"
                       setFinishedAdding={setFinishedAdding}
                       finishedAdding={finishedAdding}
                     />
@@ -142,6 +159,7 @@ export default function TransactionsPage() {
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
                     <TransactionsTable
+                      searchQ={searchQ}
                       type="departure"
                       setFinishedAdding={setFinishedAdding}
                       finishedAdding={finishedAdding}
@@ -153,6 +171,7 @@ export default function TransactionsPage() {
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
                     <TransactionsTable
+                      searchQ={searchQ}
                       type="return"
                       setFinishedAdding={setFinishedAdding}
                       finishedAdding={finishedAdding}

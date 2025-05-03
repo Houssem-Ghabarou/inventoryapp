@@ -16,7 +16,6 @@ const InvoiceModal = ({
     setIsOpen(false);
   };
 
-  console.log("transaction in invoice modal", transaction);
   const stopPropagation = (e: React.MouseEvent) => {
     e.stopPropagation();
   };

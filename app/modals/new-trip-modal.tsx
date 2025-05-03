@@ -71,7 +71,6 @@ export default function NewTripModal({
   }, [isOpen]);
 
   const fetchData = async () => {
-    console.log("fetching data...");
     setIsLoading(true);
     try {
       // Fetch inventory items

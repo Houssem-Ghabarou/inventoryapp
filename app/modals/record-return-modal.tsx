@@ -279,7 +279,6 @@ export default function RecordReturnModal({
           vehicleName: selectedTrip.vehicleName,
           status: "completed",
           soldItems: returnedItems.map((item) => {
-            console.log("Sold Item:", item);
             return {
               itemId: item.itemId,
               name: item.name,

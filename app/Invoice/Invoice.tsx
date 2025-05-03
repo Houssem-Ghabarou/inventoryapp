@@ -16,7 +16,6 @@ export default function Invoice({
   setTransaction: React.Dispatch<React.SetStateAction<any>>;
   handleClose: () => void;
 }) {
-  console.log(transaction, "transaction in invoice");
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("fr-TN", {
       style: "currency",
@@ -25,7 +24,6 @@ export default function Invoice({
   };
   const { data } = transaction;
   const { soldItems } = data;
-  console.log(data, "dataaaaaa");
   const InvoicePDF = () => (
     <Document>
       <Page size="A4" style={styles.page}>

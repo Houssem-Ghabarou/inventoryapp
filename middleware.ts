@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   // Debugging: Log all cookies
-  console.log("Cookies:", request.cookies.getAll());
 
   const path = request.nextUrl.pathname;
   const isPublicPath = path === "/login" || path === "/register";
@@ -11,8 +10,6 @@ export function middleware(request: NextRequest) {
   // Check for authentication token (assuming it's stored as "user")
   const userCookie = request.cookies.get("user")?.value; // Read cookie value
   const isAuthenticated = Boolean(userCookie); // Convert to boolean
-
-  console.log("Authenticated:", isAuthenticated);
 
   if (!isPublicPath && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));

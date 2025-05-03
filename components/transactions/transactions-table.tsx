@@ -8,6 +8,9 @@ import {
   ArrowRightLeft,
   DollarSign,
   Edit,
+  Delete,
+  DeleteIcon,
+  Trash,
 } from "lucide-react";
 import {
   Table,
@@ -32,6 +35,7 @@ import {
   query,
   where,
   orderBy,
+  deleteDoc,
   limit,
   type Timestamp,
 } from "firebase/firestore";
@@ -39,6 +43,7 @@ import { db } from "@/firebase/config";
 import EditReturnModal from "@/app/modals/edit-return-modal";
 import EditTripModal from "@/app/modals/edit-trip-modal";
 import InvoiceModal from "@/app/modals/invoiceModal";
+import { useConfirmModal } from "@/hooks/useConfirmModal";
 type Transaction = {
   id: string;
   type: "departure" | "return" | "sale";
@@ -58,7 +63,8 @@ interface TransactionsTableProps {
   type: "all" | "departure" | "return" | "sale";
   limitCount?: number;
   finishedAdding?: number;
-  setFinishedAdding?: (value: number) => void;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
+  searchQ?: string;
 }
 
 export default function TransactionsTable({
@@ -66,6 +72,7 @@ export default function TransactionsTable({
   limitCount = 100,
   finishedAdding,
   setFinishedAdding,
+  searchQ,
 }: TransactionsTableProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +85,11 @@ export default function TransactionsTable({
   const [invoiceSelected, setInvoiceSelected] = useState<Transaction | null>(
     null
   );
+  const [searchRes, setSearchRes] = useState([] as Transaction[]);
+  const { showModal } = useConfirmModal();
+
+  const dataToDisplay =
+    searchQ && searchQ.length > 0 ? searchRes : transactions;
   useEffect(() => {
     fetchTransactions();
   }, [type]);
@@ -86,6 +98,37 @@ export default function TransactionsTable({
       fetchTransactions();
     }
   }, [finishedAdding]);
+
+  useEffect(() => {
+    if (searchQ) {
+      const filteredTransactions = transactions.filter((transaction) => {
+        const searchQuery = searchQ.toLowerCase();
+        const formattedDate = formatDate(transaction.date).toLowerCase();
+        const formattedValue = formatCurrency(transaction.value).toLowerCase();
+        const formattedTotalSellPrice = transaction.totalSellPrice
+          ? formatCurrency(transaction.totalSellPrice).toLowerCase()
+          : "";
+
+        // Convert the search query to a date if it matches the format "dd-mm-yyyy"
+        const isDateQuery = /^\d{2}-\d{2}-\d{4}$/.test(searchQuery);
+        const dateQuery = isDateQuery ? searchQuery : null;
+
+        return (
+          transaction.reference.toLowerCase().includes(searchQuery) ||
+          transaction.type.toLowerCase().includes(searchQuery) ||
+          transaction.vehicle.name.toLowerCase().includes(searchQuery) ||
+          transaction.status.toLowerCase().includes(searchQuery) ||
+          formattedDate.includes(searchQuery) ||
+          (dateQuery && formattedDate === dateQuery) ||
+          formattedValue.includes(searchQuery) ||
+          formattedTotalSellPrice.includes(searchQuery)
+        );
+      });
+      setSearchRes(filteredTransactions);
+    } else {
+      fetchTransactions();
+    }
+  }, [searchQ]);
 
   const fetchTransactions = async () => {
     setLoading(true);
@@ -129,10 +172,8 @@ export default function TransactionsTable({
         };
       });
 
-      console.log(transactionsList, "transactionsList");
       setTransactions(transactionsList);
     } catch (error) {
-      console.error("Error fetching transactions:", error);
     } finally {
       setLoading(false);
     }
@@ -161,7 +202,6 @@ export default function TransactionsTable({
   const closeEditTripModal = () => {
     setEditTripModalOpen(false);
     setSelectedTransactionId("");
-    console.log("closeEditTripModal");
     // Refresh the transactions after editing
     fetchTransactions();
   };
@@ -258,28 +298,11 @@ export default function TransactionsTable({
     if (!timestamp) return "N/A";
 
     const date = timestamp.toDate();
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
 
-    // Check if it's today
-    if (date.toDateString() === now.toDateString()) {
-      return `Today, ${date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`;
-    }
-
-    // Check if it's yesterday
-    if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday, ${date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`;
-    }
-
-    // Otherwise return full date
-    return date.toLocaleString();
+    return `${day}-${month}-${year}`;
   };
 
   if (loading) {
@@ -290,7 +313,7 @@ export default function TransactionsTable({
     );
   }
 
-  if (transactions.length === 0) {
+  if (dataToDisplay.length === 0) {
     return (
       <div className="flex items-center justify-center h-[400px]">
         No transactions found
@@ -299,11 +322,33 @@ export default function TransactionsTable({
   }
 
   const handleInvoiceClick = (transaction: Transaction) => {
-    console.log(transaction, "transaction invoice");
-    // Handle the invoice click here
-    console.log("Invoice clicked for transaction ID:", transaction);
     setInvoiceSelected(transaction);
     setModalInvoicOpen(true);
+  };
+  const deleteTransaction = async (id: string) => {
+    try {
+      showModal(
+        async () => {
+          const transactionRef = collection(db, "transactions");
+          const transactionDoc = query(
+            transactionRef,
+            where("__name__", "==", id)
+          );
+          const snapshot = await getDocs(transactionDoc);
+
+          if (!snapshot.empty) {
+            const docId = snapshot.docs[0].id;
+            await deleteDoc(snapshot.docs[0].ref);
+            setFinishedAdding((prev) => prev + 1);
+          } else {
+            console.log("Transaction not found with ID:", id);
+          }
+        },
+        () => {}
+      );
+    } catch (error) {
+      console.log("Error deleting transaction:", error);
+    }
   };
 
   return (
@@ -335,8 +380,7 @@ export default function TransactionsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => {
-              console.log(transaction, "transaction");
+            {dataToDisplay?.map((transaction) => {
               return (
                 <TableRow
                   key={transaction.id}
@@ -419,6 +463,13 @@ export default function TransactionsTable({
                             Invoice
                           </DropdownMenuItem>
                         )}
+                        {/* dlete */}
+                        <DropdownMenuItem
+                          onClick={() => deleteTransaction(transaction.id)}
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete {transaction.type}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

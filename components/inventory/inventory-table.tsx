@@ -288,7 +288,6 @@ export default function InventoryTable({
         </TableHeader>
         <TableBody>
           {sortedItems.map((item) => {
-            console.log(item, "item");
             const stockStatus = getStockStatus(item);
             return (
               <TableRow key={item.id}>

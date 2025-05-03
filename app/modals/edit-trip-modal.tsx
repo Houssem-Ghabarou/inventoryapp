@@ -250,10 +250,6 @@ export default function EditTripModal({
             totalValue: newTotalValue,
             updatedAt: serverTimestamp(),
           });
-
-          console.log(
-            `Item: ${item.name}, Old Total Value: ${oldTotalValue}, New Total Value: ${newTotalValue}`
-          );
         }
       }
 
