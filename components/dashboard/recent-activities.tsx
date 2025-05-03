@@ -37,12 +37,14 @@ type Activity = {
   date: Timestamp;
   user: string;
   vehicle?: string;
+  totalSellPrice?: number;
 };
 
 export default function RecentActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  console.log(activities, "activities");
   useEffect(() => {
     fetchRecentActivities();
   }, []);
@@ -79,6 +81,7 @@ export default function RecentActivities() {
           value: data.value,
           date: data.date,
           vehicle: data.vehicleName,
+          totalSellPrice: data.totalSellPrice,
         };
       });
 
@@ -245,7 +248,9 @@ export default function RecentActivities() {
               <TableCell>{activity.quantity}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  {[formatCurrency(activity.value) || "0.00"]}
+                  {activity.type === "sale"
+                    ? formatCurrency(activity.totalSellPrice || 0)
+                    : formatCurrency(activity.value || 0)}
                 </div>
               </TableCell>
               <TableCell>{formatDate(activity.date)}</TableCell>
