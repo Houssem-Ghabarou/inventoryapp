@@ -77,6 +77,7 @@ export default function RecordReturnModal({
     totalValueReturned: 0,
     totalItemsSold: 0,
     totalValueSold: 0,
+    totalInitialValue: 0,
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -150,6 +151,7 @@ export default function RecordReturnModal({
     let totalValueReturned = 0;
     let totalItemsSold = 0;
     let totalValueSold = 0;
+    let totalInitialValue = 0;
 
     selectedTrip.tripeItems.forEach((item) => {
       const returnedQty = returnItems[item.itemId] || 0;
@@ -157,8 +159,8 @@ export default function RecordReturnModal({
 
       totalItemsReturned += returnedQty;
       totalValueReturned += returnedQty * item.unitPrice;
-
-      totalItemsSold += soldQty;
+      (totalInitialValue += soldQty * item.unitPrice),
+        (totalItemsSold += soldQty);
       totalValueSold += soldQty * item.sellPrice;
     });
 
@@ -167,6 +169,7 @@ export default function RecordReturnModal({
       totalValueReturned,
       totalItemsSold,
       totalValueSold,
+      totalInitialValue,
     });
   }, [returnItems, selectedTrip]);
 
@@ -206,8 +209,10 @@ export default function RecordReturnModal({
           quantityReturned: returnedQty,
           quantitySold: soldQty,
           unitPrice: item.unitPrice,
+          sellPrice: item.sellPrice,
           returnValue: returnedQty * item.unitPrice,
-          soldValue: soldQty * item.unitPrice,
+          soldValue: soldQty * item.sellPrice,
+          value: item.totalValue,
         };
       });
 
@@ -268,18 +273,23 @@ export default function RecordReturnModal({
           tripId: selectedTrip.id,
           date: serverTimestamp(),
           items: summary.totalItemsSold,
-          value: summary.totalValueSold,
+          value: summary.totalInitialValue,
+          totalSellPrice: summary.totalValueSold,
           vehicleId: selectedTrip.vehicleId,
           vehicleName: selectedTrip.vehicleName,
           status: "completed",
-          soldItems: returnedItems.map((item) => ({
-            itemId: item.itemId,
-            name: item.name,
-            quantity: item.quantitySold,
-            unitPrice: item.unitPrice,
-            sellPrice: item.unitPrice,
-            totalValue: item.soldValue,
-          })),
+          soldItems: returnedItems.map((item) => {
+            console.log("Sold Item:", item);
+            return {
+              itemId: item.itemId,
+              name: item.name,
+              quantity: item.quantitySold,
+              unitPrice: item.unitPrice,
+              sellPrice: item.sellPrice,
+              totalSaleValue: item.soldValue,
+              value: item.value,
+            };
+          }),
           createdBy: user?.id || "unknown",
           createdAt: serverTimestamp(),
         };
