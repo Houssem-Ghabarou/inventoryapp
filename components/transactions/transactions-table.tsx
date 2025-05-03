@@ -110,6 +110,7 @@ export default function TransactionsTable({
       const transactionsList = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
+          data: data,
           id: doc.id,
           type: data.type,
           reference: data.reference,
@@ -125,6 +126,7 @@ export default function TransactionsTable({
         };
       });
 
+      console.log(transactionsList, "transactionsList");
       setTransactions(transactionsList);
     } catch (error) {
       console.error("Error fetching transactions:", error);
