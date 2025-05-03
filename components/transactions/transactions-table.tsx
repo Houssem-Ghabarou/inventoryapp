@@ -337,7 +337,24 @@ export default function TransactionsTable({
           const snapshot = await getDocs(transactionDoc);
 
           if (!snapshot.empty) {
-            const docId = snapshot.docs[0].id;
+            const transactionToDelete = snapshot.docs[0].data();
+
+            console.log(transactionToDelete, "transactionToDelete");
+            const salesCollection = collection(db, "sales");
+            const salesQuery = query(
+              salesCollection,
+              where("reference", "==", transactionToDelete.reference)
+            );
+            const salesSnapshot = await getDocs(salesQuery);
+
+            // Delete related sales transactions
+            if (!salesSnapshot.empty) {
+              for (const saleDoc of salesSnapshot.docs) {
+                await deleteDoc(saleDoc.ref);
+              }
+            }
+
+            // Delete the original transaction
             await deleteDoc(snapshot.docs[0].ref);
             setFinishedAdding((prev) => prev + 1);
           } else {

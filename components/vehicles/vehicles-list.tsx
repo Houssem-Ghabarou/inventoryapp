@@ -167,7 +167,6 @@ export default function VehiclesList() {
             <TableHead className="w-[200px]">Vehicle</TableHead>
             <TableHead>License Plate</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Assigned Items</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -184,12 +183,7 @@ export default function VehiclesList() {
               </TableCell>
               <TableCell>{vehicle.licensePlate}</TableCell>
               <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  {vehicle.assignedItems}
-                </div>
-              </TableCell>
+
               <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
