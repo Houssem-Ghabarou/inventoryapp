@@ -18,12 +18,20 @@ import VehiclesMap from "@/components/vehicles/vehicles-map";
 import AddVehicleModal from "../modals/add-vehicle-item";
 
 export default function VehiclesPage() {
+  const [finishedAdding, setFinishedAdding] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Main content */}
       <div className="flex-1 ">
-        {isOpen && <AddVehicleModal isOpen={isOpen} setIsOpen={setIsOpen} />}
+        {isOpen && (
+          <AddVehicleModal
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            setFinishedAdding={setFinishedAdding}
+            finishedAdding={finishedAdding}
+          />
+        )}
 
         <header className="bg-white border-b px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -74,7 +82,10 @@ export default function VehiclesPage() {
                   <Suspense
                     fallback={<Skeleton className="h-[500px] w-full" />}
                   >
-                    <VehiclesList />
+                    <VehiclesList
+                      finishedAdding={finishedAdding}
+                      setFinishedAdding={setFinishedAdding}
+                    />
                   </Suspense>
                 </TabsContent>
               </Tabs>

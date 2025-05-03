@@ -23,9 +23,13 @@ import { useAuth } from "@/contexts/auth-context";
 export default function AddVehicleModal({
   isOpen,
   setIsOpen,
+  finishedAdding,
+  setFinishedAdding,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  finishedAdding: number;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -84,9 +88,12 @@ export default function AddVehicleModal({
 
       setSuccess("Vehicle added successfully!");
 
+      // Update the parent component to reflect the new vehicle
+      setFinishedAdding((prev) => prev + 1);
+      setIsOpen(false);
       // Reset form after successful submission
       setTimeout(() => {
-        setIsOpen(false);
+        // setIsOpen(false);
         setFormData({
           name: "",
           type: "",

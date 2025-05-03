@@ -39,13 +39,19 @@ type Vehicle = {
   assignedItems: number;
 };
 
-export default function VehiclesList() {
+export default function VehiclesList({
+  finishedAdding,
+  setFinishedAdding,
+}: {
+  finishedAdding: number;
+  setFinishedAdding: React.Dispatch<React.SetStateAction<number>>;
+}) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [finishedAdding]);
 
   const fetchVehicles = async () => {
     setLoading(true);
