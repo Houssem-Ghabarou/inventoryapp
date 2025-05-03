@@ -36,9 +36,9 @@ export default function Invoice({
           </View>
 
           <View style={styles.SpaceY}>
-            <Text style={styles.textBold}>CampanyNAme</Text>
-            <Text>123 business Steet</Text>
-            <Text>City State 12345</Text>
+            <Text style={styles.textBold}>STE HK BISCOTTA GROS</Text>
+            <Text>Zgueg Elhoudi</Text>
+            <Text>Menzel Bouzelfa 8010</Text>
           </View>
         </View>
         {/* render table */}
