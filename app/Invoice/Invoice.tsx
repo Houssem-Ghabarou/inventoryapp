@@ -17,13 +17,22 @@ export default function Invoice({
   handleClose: () => void;
 }) {
   console.log(transaction, "transaction in invoice");
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("fr-TN", {
+      style: "currency",
+      currency: "TND",
+    }).format(amount);
+  };
+  const { data } = transaction;
+  const { soldItems } = data;
+  console.log(data, "dataaaaaa");
   const InvoicePDF = () => (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.title, styles.textBold]}>Invoice</Text>
-            <Text>Invoice N2024ref25</Text>
+            <Text style={[styles.title, styles.textBold]}>Facture</Text>
+            <Text>{transaction?.reference}</Text>
           </View>
 
           <View style={styles.SpaceY}>
@@ -32,52 +41,36 @@ export default function Invoice({
             <Text>City State 12345</Text>
           </View>
         </View>
-        <View style={[styles.SpaceY, styles.billTo]}>
-          <Text style={styles.textBold}>ClientNAme</Text>
-          <Text>Client Adresse </Text>
-          <Text>city ,SateZape</Text>
-        </View>
         {/* render table */}
         <Table style={styles.table}>
           <TH style={[styles.tableHeader, styles.textBold]}>
-            <TD style={styles.td}>Description</TD>
-            <TD style={styles.td}>Quantity</TD>
-            <TD style={styles.td}>Unit Price</TD>
+            <TD style={styles.td}>Produit</TD>
+            <TD style={styles.td}>Quantité</TD>
+            <TD style={styles.td}>P.U</TD>
             <TD style={styles.td}>Total</TD>
           </TH>
-          {tableData.map((item, index) => (
+          {soldItems.map((item, index) => (
             <TR key={index}>
-              <TD style={styles.td}>{item.description}</TD>
-              <TD style={styles.td}>{item.quantity}</TD>
-              <TD style={styles.td}>${item.unitPrice.toFixed(2)}</TD>
-              <TD style={styles.td}>${item.total.toFixed(2)}</TD>
+              <TD style={styles.td}>{item?.name}</TD>
+              <TD style={styles.td}>{item?.quantity}</TD>
+              <TD style={styles.td}>{formatCurrency(item?.sellPrice)}</TD>
+              <TD style={styles.td}>{formatCurrency(item?.value)}</TD>
             </TR>
           ))}
         </Table>
-
         <View style={styles.totals}>
           <View
             style={{
               minWidth: "256px",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 8,
             }}
           >
-            {totalData.map((item) => (
-              <View
-                key={item.label}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: "8px",
-                }}
-              >
-                <Text style={item.label === "Total" ? styles.textBold : {}}>
-                  {item.label}
-                </Text>
-                <Text style={item.label === "Total" ? styles.textBold : {}}>
-                  {item.value}
-                </Text>
-              </View>
-            ))}
+            <Text style={styles.textBold}>Total</Text>
+            <Text style={styles.textBold}>
+              {formatCurrency(data?.totalSellPrice || 0)}
+            </Text>
           </View>
         </View>
       </Page>
