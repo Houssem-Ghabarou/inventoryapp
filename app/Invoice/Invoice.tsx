@@ -7,7 +7,16 @@ import styles from "./Style";
 import React from "react";
 import { tableData, totalData } from "./data";
 
-export default function Invoice() {
+export default function Invoice({
+  transaction,
+  setTransaction,
+  handleClose,
+}: {
+  transaction: any;
+  setTransaction: React.Dispatch<React.SetStateAction<any>>;
+  handleClose: () => void;
+}) {
+  console.log(transaction, "transaction in invoice");
   const InvoicePDF = () => (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -54,6 +63,7 @@ export default function Invoice() {
           >
             {totalData.map((item) => (
               <View
+                key={item.label}
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",

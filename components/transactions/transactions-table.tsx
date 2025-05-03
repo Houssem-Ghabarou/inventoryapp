@@ -75,6 +75,9 @@ export default function TransactionsTable({
     useState<string>("");
 
   const [modalInvoicOpen, setModalInvoicOpen] = useState(false);
+  const [invoiceSelected, setInvoiceSelected] = useState<Transaction | null>(
+    null
+  );
   useEffect(() => {
     fetchTransactions();
   }, [type]);
@@ -299,13 +302,19 @@ export default function TransactionsTable({
     console.log(transaction, "transaction invoice");
     // Handle the invoice click here
     console.log("Invoice clicked for transaction ID:", transaction);
+    setInvoiceSelected(transaction);
     setModalInvoicOpen(true);
   };
 
   return (
     <>
       {modalInvoicOpen && (
-        <InvoiceModal isOpen={modalInvoicOpen} setIsOpen={setModalInvoicOpen} />
+        <InvoiceModal
+          isOpen={modalInvoicOpen}
+          setIsOpen={setModalInvoicOpen}
+          transaction={invoiceSelected}
+          setTransaction={setInvoiceSelected}
+        />
       )}
 
       <div className="overflow-x-auto">
