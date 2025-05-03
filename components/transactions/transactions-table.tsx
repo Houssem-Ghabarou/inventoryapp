@@ -339,33 +339,30 @@ export default function TransactionsTable({
           if (!snapshot.empty) {
             const transactionToDelete = snapshot.docs[0].data();
 
-            console.log(transactionToDelete, "transactionToDelete");
             const salesCollection = collection(db, "sales");
+            const normalizedReference = transactionToDelete.reference;
             const salesQuery = query(
               salesCollection,
-              where("reference", "==", transactionToDelete.reference)
+              where("reference", "==", normalizedReference)
             );
             const salesSnapshot = await getDocs(salesQuery);
 
-            // Delete related sales transactions
             if (!salesSnapshot.empty) {
-              for (const saleDoc of salesSnapshot.docs) {
-                await deleteDoc(saleDoc.ref);
-              }
+              // Delete the corresponding sale document
+              const saleDocRef = salesSnapshot.docs[0].ref;
+              await deleteDoc(saleDocRef);
+            } else {
             }
 
             // Delete the original transaction
             await deleteDoc(snapshot.docs[0].ref);
             setFinishedAdding((prev) => prev + 1);
           } else {
-            console.log("Transaction not found with ID:", id);
           }
         },
         () => {}
       );
-    } catch (error) {
-      console.log("Error deleting transaction:", error);
-    }
+    } catch (error) {}
   };
 
   return (

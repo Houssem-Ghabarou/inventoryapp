@@ -299,7 +299,7 @@ export default function RecordReturnModal({
       // Create a sales document to save historical transactions
       const salesDocumentData = {
         tripId: selectedTrip.id,
-        reference: `SALES-${selectedTrip.reference}`,
+        reference: `SALE-${selectedTrip.reference}`,
         date: serverTimestamp(),
         totalItemsSold: summary.totalItemsSold,
         totalValueSold: summary.totalValueSold,
