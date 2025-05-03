@@ -1,11 +1,19 @@
 "use client";
 
-import { Document, Page, PDFViewer, Text, View } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  pdf,
+  PDFViewer,
+  Text,
+  View,
+} from "@react-pdf/renderer";
 import { Table, TR, TH, TD } from "@ag-media/react-pdf-table";
 
 import styles from "./Style";
 import React from "react";
 import { tableData, totalData } from "./data";
+import { Download, Printer } from "lucide-react";
 
 export default function Invoice({
   transaction,
@@ -74,8 +82,33 @@ export default function Invoice({
       </Page>
     </Document>
   );
+  // Inside your component or a download function
+  const downloadPDF = async () => {
+    const blob = await pdf(<InvoicePDF />).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `facture-${transaction?.reference}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printPDF = async () => {
+    const blob = await pdf(<InvoicePDF />).toBlob();
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, "_blank");
+    newWindow?.print();
+  };
   return (
-    <div>
+    <div className="relative">
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+        <button onClick={downloadPDF}>
+          <Download />
+        </button>
+        <button onClick={printPDF} className="ml-5">
+          <Printer />
+        </button>
+      </div>
       <div className="w-full h-[600px]">
         <PDFViewer width="100%" height="100%">
           <InvoicePDF />

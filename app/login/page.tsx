@@ -115,14 +115,14 @@ export default function LoginPage() {
           </form>
         </CardContent>
 
-        <CardFooter className="text-center text-sm text-muted-foreground">
+        {/* <CardFooter className="text-center text-sm text-muted-foreground">
           <p className="w-full">
             Don't have an account?{" "}
             <Link href="/register" className="text-primary hover:underline">
               Register
             </Link>
           </p>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
     </div>
   );
