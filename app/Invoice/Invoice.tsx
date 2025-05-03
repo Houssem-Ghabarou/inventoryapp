@@ -47,7 +47,7 @@ export default function Invoice({
             <TD style={styles.td}>P.U</TD>
             <TD style={styles.td}>Total</TD>
           </TH>
-          {soldItems.map((item, index) => (
+          {soldItems.map((item: any, index: any) => (
             <TR key={index}>
               <TD style={styles.td}>{item?.name}</TD>
               <TD style={styles.td}>{item?.quantity}</TD>
@@ -76,7 +76,7 @@ export default function Invoice({
   );
   return (
     <div>
-      <div className="w-full h-[550px]">
+      <div className="w-full h-[600px]">
         <PDFViewer width="100%" height="100%">
           <InvoicePDF />
         </PDFViewer>
