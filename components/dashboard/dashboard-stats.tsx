@@ -54,7 +54,7 @@ export default function DashboardStats() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Sales Value
+            Total Sales Value All Time
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -63,6 +63,7 @@ export default function DashboardStats() {
           </div>
         </CardContent>
       </Card>
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
