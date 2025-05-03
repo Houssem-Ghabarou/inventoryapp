@@ -354,7 +354,7 @@ export default function TransactionsTable({
                     {transaction.type === "return"
                       ? "--"
                       : transaction.totalSellPrice != null
-                      ? formatCurrency(transaction.value)
+                      ? formatCurrency(transaction.totalSellPrice)
                       : "--"}
                   </TableCell>
 
