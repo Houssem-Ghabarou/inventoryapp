@@ -293,9 +293,10 @@ export default function TransactionsTable({
     );
   }
 
-  const handleInvoiceClick = (transactionId: string) => {
+  const handleInvoiceClick = (transaction: Transaction) => {
+    console.log(transaction, "transaction invoice");
     // Handle the invoice click here
-    console.log("Invoice clicked for transaction ID:", transactionId);
+    console.log("Invoice clicked for transaction ID:", transaction);
     setModalInvoicOpen(true);
   };
 
@@ -401,7 +402,7 @@ export default function TransactionsTable({
                         {transaction.type === "sale" && (
                           //invoice
                           <DropdownMenuItem
-                            onClick={() => handleInvoiceClick(transaction.id)}
+                            onClick={() => handleInvoiceClick(transaction)}
                           >
                             <ArrowRightLeft className="mr-2 h-4 w-4" />
                             Invoice
