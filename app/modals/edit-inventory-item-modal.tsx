@@ -27,6 +27,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { useAuth } from "@/contexts/auth-context";
+import { formatInputNumber } from "@/utils/formatInputNumber";
 
 type InventoryItemData = {
   id: string;
@@ -178,11 +179,16 @@ export default function EditInventoryItemModal({
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Allow empty input for better UX
-    if (/^\d*\.?\d*$/.test(value)) {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    // // Allow input with digits, a single comma or period, and optional decimals
+    // if (/^\d*[.,]?\d*$/.test(value) || value === "") {
+    //   // Replace , with . before saving
+    //   const formattedValue = value.replace(/,/g, ".");
+
+    const formattedValue = formatInputNumber(value, "TND");
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    // }
   };
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -408,6 +414,7 @@ export default function EditInventoryItemModal({
                     name="minStock"
                     type="number"
                     min="0"
+                    step="1"
                     value={formData.minStock || ""}
                     onChange={handleNumberChange}
                   />
@@ -418,7 +425,7 @@ export default function EditInventoryItemModal({
                   <Input
                     id="unitPrice"
                     name="unitPrice"
-                    type="number"
+                    type="string"
                     min="0"
                     step="1"
                     value={formData.unitPrice || ""}
@@ -431,7 +438,7 @@ export default function EditInventoryItemModal({
                   <Input
                     id="sellPrice"
                     name="sellPrice"
-                    type="number"
+                    type="string"
                     min="0"
                     step="1"
                     value={formData.sellPrice || ""}
