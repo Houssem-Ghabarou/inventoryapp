@@ -60,7 +60,9 @@ export default function Invoice({
               <TD style={styles.td}>{item?.name}</TD>
               <TD style={styles.td}>{item?.quantity}</TD>
               <TD style={styles.td}>{formatCurrency(item?.sellPrice)}</TD>
-              <TD style={styles.td}>{formatCurrency(item?.value)}</TD>
+              <TD style={styles.td}>
+                {formatCurrency(item?.sellPrice * item?.quantity)}
+              </TD>
             </TR>
           ))}
         </Table>
