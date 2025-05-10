@@ -24,16 +24,27 @@ export default function Invoice({
   setTransaction: React.Dispatch<React.SetStateAction<any>>;
   handleClose: () => void;
 }) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("fr-TN", {
+  const formatCurrency = (amount: any) => {
+    if (typeof amount === "string") {
+      amount = amount.replace(/[^\d.,-]/g, "").replace(",", ".");
+    }
+
+    const cleanAmount = parseFloat(amount);
+    let formatted = new Intl.NumberFormat("fr-TN", {
       style: "currency",
       currency: "TND",
-    }).format(amount);
+      minimumFractionDigits: 3,
+    }).format(isNaN(cleanAmount) ? 0 : cleanAmount);
+
+    // Nettoyer les espaces insécables ou caractères Unicode invisibles
+    formatted = formatted.replace(/\u202F/g, " ").replace(/\u00A0/g, " ");
+
+    return formatted;
   };
+
   const { data } = transaction;
   const { soldItems } = data;
   const { tripeItems } = data;
-  console.log("tipeItemstipeItems", data);
 
   const InvoicePDF = () => (
     <Document>
@@ -41,7 +52,7 @@ export default function Invoice({
         <View style={styles.header}>
           <View>
             <Text style={[styles.title, styles.textBold]}>
-              {data?.type === "sale" ? "facture" : "Bon de sortie"}
+              {data?.type === "sale" ? "Facture" : "Bon de sortie"}
             </Text>
             <Text>{transaction?.reference}</Text>
           </View>

@@ -474,7 +474,7 @@ export default function TransactionsTable({
                             onClick={() => handleInvoiceClick(transaction)}
                           >
                             <ArrowRightLeft className="mr-2 h-4 w-4" />
-                            Invoice
+                            Facture
                           </DropdownMenuItem>
                         )}
                         {transaction.type === "departure" && (

@@ -10,7 +10,11 @@ const styles = StyleSheet.create({
     color: "#262626",
     fontFamily: "Helvetica",
     fontSize: 12,
-    padding: "30px 50px",
+    // padding: "30px 50px",
+    // paddingBottom: 100,
+    paddingRight: 50,
+    paddingLeft: 50,
+    paddingTop: 30,
   },
   header: {
     flexDirection: "row",
@@ -21,7 +25,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   textBold: {
-    fontFamily: "Helvetica-Bold",
+    fontWeight: "bold",
   },
   SpaceY: {
     display: "flex",
