@@ -32,12 +32,17 @@ export default function Invoice({
   };
   const { data } = transaction;
   const { soldItems } = data;
+  const { tripeItems } = data;
+  console.log("tipeItemstipeItems", data);
+
   const InvoicePDF = () => (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={[styles.title, styles.textBold]}>Facture</Text>
+            <Text style={[styles.title, styles.textBold]}>
+              {data?.type === "sale" ? "facture" : "Bon de sortie"}
+            </Text>
             <Text>{transaction?.reference}</Text>
           </View>
 
@@ -55,16 +60,29 @@ export default function Invoice({
             <TD style={styles.td}>P.U</TD>
             <TD style={styles.td}>Total</TD>
           </TH>
-          {soldItems.map((item: any, index: any) => (
-            <TR key={index}>
-              <TD style={styles.td}>{item?.name}</TD>
-              <TD style={styles.td}>{item?.quantity}</TD>
-              <TD style={styles.td}>{formatCurrency(item?.sellPrice)}</TD>
-              <TD style={styles.td}>
-                {formatCurrency(item?.sellPrice * item?.quantity)}
-              </TD>
-            </TR>
-          ))}
+          {data?.type === "sale"
+            ? soldItems.map((item: any, index: number) => (
+                <TR key={index}>
+                  <TD style={styles.td}>{item?.name}</TD>
+                  <TD style={styles.td}>{item?.quantity}</TD>
+                  <TD style={styles.td}>{formatCurrency(item?.sellPrice)}</TD>
+                  <TD style={styles.td}>
+                    {formatCurrency(item?.sellPrice * item?.quantity)}
+                  </TD>
+                </TR>
+              ))
+            : data?.type === "departure"
+            ? tripeItems.map((item: any, index: number) => (
+                <TR key={index}>
+                  <TD style={styles.td}>{item?.name}</TD>
+                  <TD style={styles.td}>{item?.quantity}</TD>
+                  <TD style={styles.td}>{formatCurrency(item?.sellPrice)}</TD>
+                  <TD style={styles.td}>
+                    {formatCurrency(item?.sellPrice * item?.quantity)}
+                  </TD>
+                </TR>
+              ))
+            : null}
         </Table>
         <View style={styles.totals}>
           <View

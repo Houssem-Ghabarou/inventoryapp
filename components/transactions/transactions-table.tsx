@@ -463,7 +463,7 @@ export default function TransactionsTable({
                         {/* {transaction.type === "departure" &&
                         transaction.status === "open" && (
                           <DropdownMenuItem data-modal-trigger="record-return">
-                            <RotateCcw className="mr-2 h-4 w-4" />
+                            <RotateCcwFacture className="mr-2 h-4 w-4" />
                             Record Return
                           </DropdownMenuItem>
                         )} */}
@@ -475,6 +475,15 @@ export default function TransactionsTable({
                           >
                             <ArrowRightLeft className="mr-2 h-4 w-4" />
                             Invoice
+                          </DropdownMenuItem>
+                        )}
+                        {transaction.type === "departure" && (
+                          //invoice
+                          <DropdownMenuItem
+                            onClick={() => handleInvoiceClick(transaction)}
+                          >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Bon de sortie
                           </DropdownMenuItem>
                         )}
                         {/* dlete */}
